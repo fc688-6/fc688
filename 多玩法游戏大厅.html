@@ -1,0 +1,1749 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>多玩法游戏大厅 · 原型</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect x='3' y='3' width='18' height='18' rx='4' fill='%232F5597'/><circle cx='9' cy='9' r='1.6' fill='white'/><circle cx='15' cy='15' r='1.6' fill='white'/></svg>">
+<style>
+  :root{
+    --bg:#15171c; --panel:#21242b; --panel2:#2a2e37; --line:#3a3f4a;
+    --txt:#e8eaee; --sub:#9aa0ab; --accent:#4a90d9; --gold:#e8b339;
+    --common:#9aa0a6; --rare:#4a90d9; --epic:#9b59d0; --legend:#e8b339; --limited:#e74c3c;
+    --win:#3fb950; --lose:#e74c3c; --draw:#9aa0ab; --warn:#e0a83d;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
+  body{background:var(--bg);color:var(--txt);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;font-size:15px;min-height:100vh;overflow-x:hidden}
+  .wrap{max-width:480px;margin:0 auto;padding:12px 12px 96px}
+  .hidden{display:none!important}
+  button{font-family:inherit}
+  input,select,textarea{font-family:inherit}
+
+  /* 顶栏 */
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 2px 12px}
+  .topbar h1{font-size:16px;font-weight:700;min-width:0;white-space:nowrap}
+  .currencies{display:flex;gap:6px;flex-wrap:wrap}
+  .cur{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:5px 8px;font-size:12px;white-space:nowrap;min-width:0}
+  .cur b{font-variant-numeric:tabular-nums}
+  .cur.dia b{color:var(--accent)} .cur.chip b{color:var(--gold)}
+  .cur.dia{cursor:pointer} .cur .plus{color:var(--accent);margin-left:3px;font-weight:700}
+
+  /* 视图 */
+  .view{display:none}
+  .view.active{display:block}
+
+  /* 登录 */
+  .auth-box{max-width:340px;margin:18vh auto 0;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:26px 22px}
+  .auth-box h2{font-size:20px;text-align:center;margin-bottom:4px}
+  .auth-box .sub{color:var(--sub);font-size:13px;text-align:center;margin-bottom:20px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;color:var(--sub);margin-bottom:6px}
+  .field input{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--txt);padding:11px 12px;font-size:16px}
+  .acc-list{display:flex;flex-direction:column;gap:8px}
+  .acc-item{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+  .acc-item:hover{border-color:var(--accent)}
+  .acc-item .a-name{font-weight:600;font-size:14px}
+  .acc-item .a-role{color:var(--sub);font-size:12px}
+  .btn{border:1px solid var(--line);background:var(--panel2);color:var(--txt);border-radius:10px;padding:10px 12px;font-size:14px;cursor:pointer;min-height:44px}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.gold{background:var(--gold);border-color:var(--gold);color:#1a1a1a;font-weight:700}
+  .btn.row{width:100%;margin-top:8px}
+  .auth-switch{text-align:center;margin-top:14px;font-size:13px;color:var(--sub)}
+  .auth-switch a{color:var(--accent);cursor:pointer}
+
+  /* 大厅入口 */
+  .entry-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:10px}
+  .entry{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 14px;cursor:pointer;text-align:center;min-height:120px;display:flex;flex-direction:column;justify-content:center;gap:8px}
+  .entry .e-icon svg{width:30px;height:30px}
+  .entry .e-name{font-weight:700;font-size:16px}
+  .entry .e-desc{color:var(--sub);font-size:12px}
+  .quick-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px}
+  .quick{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 6px;text-align:center;cursor:pointer}
+  .quick .q-name{font-size:13px;margin-top:6px}
+
+  /* 游戏内顶栏 */
+  .game-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+  .back-btn{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:13px;color:var(--txt);cursor:pointer}
+  .last-result{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:13px;min-width:130px;text-align:left}
+  .last-result .lr-label{color:var(--sub);font-size:11px}
+  .last-result .lr-val.win{color:var(--win)} .last-result .lr-val.lose{color:var(--lose)} .last-result .lr-val.draw{color:var(--draw)}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+  .section-title{font-size:15px;font-weight:700;margin:14px 0 10px}
+  .bet-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+  .bet{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 6px;text-align:center;cursor:pointer}
+  .bet.sel{border-color:var(--accent)}
+  .bet .b-name{font-weight:700;font-size:14px}
+  .bet .b-odds{color:var(--sub);font-size:11px;margin-top:2px}
+
+  /* 骰子 */
+  .dice-stage{display:flex;justify-content:center;gap:18px;padding:20px 0}
+  .die{width:64px;height:64px;background:#fff;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;color:#1a1a1a;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+  .dice-rolling{animation:shake .15s infinite}
+  @keyframes shake{0%{transform:rotate(-12deg)}50%{transform:rotate(12deg)}100%{transform:rotate(-12deg)}}
+
+  /* 扑克 */
+  .card-stage{display:flex;justify-content:center;gap:24px;padding:20px 0}
+  .pcard{width:84px;height:120px;background:#fff;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#1a1a1a;font-weight:700}
+  .pcard .pc-suit{font-size:26px}
+  .pcard .pc-rank{font-size:20px;margin-top:4px}
+  .pcard.back{background:repeating-linear-gradient(45deg,#2a2e37,#2a2e37 8px,#343945 8px,#343945 16px)}
+  .vs{align-self:center;color:var(--sub);font-weight:700}
+
+  /* 射箭 */
+  .bow-stage{padding:10px 0;text-align:center}
+  .target{width:180px;height:180px;margin:0 auto;border-radius:50%;position:relative;background:#2a2e37}
+  .ring{position:absolute;border:1px solid #4a4f5a;border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%)}
+  .arrow-dot{position:absolute;width:12px;height:12px;border-radius:50%;background:var(--gold);border:2px solid #fff;transform:translate(-50%,-50%);left:50%;top:50%;transition:all .1s}
+  .power-bar{height:14px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);overflow:hidden;margin:16px 0}
+  .power-fill{height:100%;width:0;background:linear-gradient(90deg,var(--win),var(--gold),var(--lose))}
+
+  /* 顶栏充值按钮 */
+  .top-recharge{width:30px;height:30px;border-radius:10px;background:var(--gold);color:#1a1a1a;font-weight:700;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;flex:none}
+
+  /* 俄罗斯轮盘 */
+  .rou-stage{padding:8px 0}
+  .duel{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .avatar{width:64px;text-align:center}
+  .avatar .av-face{width:56px;height:56px;border-radius:50%;background:var(--panel2);border:2px solid var(--line);display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-size:24px}
+  .avatar .av-name{font-size:12px;color:var(--sub)}
+  .avatar.active .av-face{border-color:var(--gold);box-shadow:0 0 12px rgba(232,179,57,.4)}
+  .avatar.hit .av-face{border-color:var(--lose);background:#4a2326}
+  .avatar.dead{opacity:.4}
+  .gun-wrap{perspective:600px;margin:16px auto;display:flex;justify-content:center}
+  .gun{position:relative;width:150px;height:96px;transform-style:preserve-3d}
+  .gun.recoil{animation:recoil .25s ease}
+  @keyframes recoil{0%{transform:translateX(0)}40%{transform:translateX(-14px) rotate(-3deg)}100%{transform:translateX(0)}}
+  .frame{position:absolute;left:34px;top:34px;width:80px;height:34px;background:#3a3f4a;border-radius:8px}
+  .barrel{position:absolute;left:96px;top:40px;width:50px;height:12px;background:#2c3038;border-radius:4px}
+  .grip{position:absolute;left:40px;top:62px;width:24px;height:30px;background:#2c3038;border-radius:6px;transform:rotate(12deg)}
+  .cylinder{position:absolute;left:44px;top:26px;width:48px;height:48px;border-radius:50%;background:#454b57;border:2px solid #5a606c;transform-style:preserve-3d}
+  .cylinder.spin{animation:cylspin .5s ease}
+  @keyframes cylspin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+  .chamber{position:absolute;width:12px;height:12px;border-radius:50%;background:#1a1d22;left:50%;top:50%}
+  .flash{position:absolute;left:146px;top:30px;width:34px;height:24px;background:radial-gradient(circle,#fff7c2,#ffb347 55%,transparent 75%);border-radius:50%;opacity:0;filter:blur(1px)}
+  .flash.on{animation:flash .25s ease}
+  @keyframes flash{0%{opacity:0}30%{opacity:1}100%{opacity:0}}
+  .stage-shake{animation:shake .3s}
+  @keyframes shake{0%,100%{transform:translate(0)}20%{transform:translate(-6px,3px)}40%{transform:translate(6px,-3px)}60%{transform:translate(-4px,-2px)}80%{transform:translate(4px,2px)}}
+  .red-flash{position:fixed;inset:0;background:rgba(231,76,60,.25);opacity:0;pointer-events:none;z-index:15}
+  .red-flash.on{animation:rflash .4s ease}
+  @keyframes rflash{0%{opacity:0}30%{opacity:1}100%{opacity:0}}
+  .rou-log{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:13px;min-height:44px;margin:10px 0;color:var(--sub)}
+  .bullet-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}
+
+  /* 皮肤 / 卡片 */
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .skin-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}
+  .skin-card .s-preview{height:56px;border-radius:10px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .skin-card .s-name{font-weight:600;font-size:14px}
+  .skin-card .s-meta{color:var(--sub);font-size:12px;margin-top:3px}
+  .rar-badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:8px;color:#fff}
+  .r-common{background:var(--common)} .r-rare{background:var(--rare)}
+  .r-epic{background:var(--epic)} .r-legend{background:var(--legend);color:#1a1a1a}
+  .r-limited{background:var(--limited)}
+  .equip-on{outline:1px solid var(--win)}
+
+  .list-item{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .list-item .li-info{min-width:0}
+  .list-item .li-meta{color:var(--sub);font-size:12px;margin-top:3px}
+  .list-item .li-price{font-weight:700;color:var(--gold);white-space:nowrap}
+  .req-actions{display:flex;gap:8px;white-space:nowrap}
+  .req-btn{border:1px solid var(--line);background:var(--panel2);color:var(--txt);border-radius:8px;padding:7px 12px;font-size:13px;cursor:pointer}
+  .req-btn.approve{border-color:var(--win);color:var(--win)}
+  .req-btn.reject{border-color:var(--lose);color:var(--lose)}
+  .chat-box{display:flex;flex-direction:column;gap:10px;max-height:320px;overflow-y:auto;padding:4px 0}
+  .chat-msg{display:flex;max-width:80%}
+  .chat-msg.player{align-self:flex-end}
+  .chat-msg.admin{align-self:flex-start}
+  .chat-bubble{padding:9px 12px;border-radius:12px;font-size:14px;line-height:1.5}
+  .chat-msg.player .chat-bubble{background:var(--accent);color:#fff;border-bottom-right-radius:4px}
+  .chat-msg.admin .chat-bubble{background:var(--panel2);color:var(--txt);border-bottom-left-radius:4px}
+  .chat-time{display:block;font-size:11px;color:var(--sub);margin-top:3px}
+  .chat-empty{color:var(--sub);font-size:13px;text-align:center;padding:18px 0}
+  .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+  .stat-card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
+  .stat-card .s-num{font-size:20px;font-weight:700;color:var(--txt)}
+  .stat-card .s-label{color:var(--sub);font-size:12px;margin-top:3px}
+  .empty{color:var(--sub);text-align:center;padding:30px 10px;font-size:14px}
+
+  /* 充值 */
+  .pack-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}
+  .pack{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center;cursor:pointer}
+  .pack .p-dia{font-size:18px;font-weight:700;color:var(--accent)}
+  .pack .p-bonus{color:var(--gold);font-size:12px;margin-top:2px;min-height:16px}
+  .pack .p-price{margin-top:6px;font-size:13px;color:var(--sub)}
+  .note{font-size:11px;color:#6b7078;line-height:1.5;margin-top:10px;text-align:left}
+
+  /* 客服 */
+  .faq-item{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+  .faq-q{font-weight:600;font-size:14px;cursor:pointer}
+  .faq-a{color:var(--sub);font-size:13px;margin-top:6px;display:none}
+  .faq-item.open .faq-a{display:block}
+  textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--txt);padding:10px;font-size:15px;min-height:90px;resize:vertical}
+
+  /* 底部导航 */
+  .tabbar{position:fixed;left:0;right:0;bottom:0;background:#1b1e24;border-top:1px solid var(--line)}
+  .tabbar .inner{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
+  .tab{padding:10px 4px;text-align:center;cursor:pointer;color:var(--sub);font-size:12px}
+  .tab.active{color:var(--accent)}
+  .tab svg{display:block;margin:0 auto 4px}
+
+  .mask{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:20px;z-index:20}
+  .mask.show{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;width:100%;max-width:320px;text-align:center}
+  .modal .m-name{font-size:18px;font-weight:700;margin:10px 0 6px}
+  .modal .m-meta{color:var(--sub);font-size:13px;margin-bottom:14px}
+  .toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:#000c;border:1px solid var(--line);border-radius:10px;padding:10px 16px;font-size:14px;z-index:30;display:none;max-width:90%;text-align:center}
+  .toast.show{display:block}
+  .disclaimer{margin-top:14px;font-size:11px;color:#6b7078;line-height:1.5}
+  .admin-range{width:100%;accent-color:var(--accent);height:32px}
+
+  /* ===== 交互反馈与质感增强 ===== */
+  .btn,.entry,.quick,.bet,.pack,.acc-item,.req-btn{transition:transform .12s ease,border-color .15s ease,background .15s ease,opacity .15s ease}
+  .btn:active,.entry:active,.quick:active,.bet:active,.pack:active,.acc-item:active{transform:scale(.97)}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+  .btn:disabled:active{transform:none}
+  .view.active{animation:viewIn .18s ease}
+  @keyframes viewIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  .entry:hover,.quick:hover{border-color:var(--accent)}
+  .bet.sel{border-color:var(--accent);background:var(--panel2);box-shadow:0 0 0 1px var(--accent) inset}
+
+  /* 骰子点阵 */
+  .die{position:relative}
+  .pip-grid{width:100%;height:100%;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:12px;gap:2px}
+  .pip{width:10px;height:10px;border-radius:50%;background:currentColor;place-self:center;visibility:hidden}
+  .pip.on{visibility:visible}
+
+  /* 化龙 */
+  .dragon-stage{padding:14px 0;text-align:center}
+  .dragon-form{width:96px;height:96px;margin:0 auto 14px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--line)}
+  .dragon-form.snake{background:#2c3038;color:#9aa0a6}
+  .dragon-form.mang{background:#33413a;color:#7bc48a}
+  .dragon-form.jiao{background:#2f4a5a;color:#6db9e8}
+  .dragon-form.dragon{background:radial-gradient(circle,#e8b339,#b8860b);color:#1a1a1a;box-shadow:0 0 18px rgba(232,179,57,.5)}
+  .stage-nodes{display:flex;justify-content:space-between;align-items:center;gap:6px;margin:0 4px 14px}
+  .stage-node{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;color:#5a606c;font-size:12px;opacity:.4}
+  .stage-node svg{width:26px;height:26px}
+  .stage-node.lit{opacity:1}
+  .stage-node.current{color:var(--gold)}
+  .stage-node.current span{font-weight:700}
+  .progress-wrap{height:16px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,#4a90d9,#9b59d0,#e8b339);transition:width .25s ease}
+  .dragon-meta{color:var(--sub);font-size:13px;margin-top:10px}
+</style>
+</head>
+<body>
+
+<!-- ===== 登录 / 注册 ===== -->
+<section class="view active" id="view-login">
+  <div class="auth-box">
+    <h2>多玩法游戏大厅</h2>
+    <div class="sub">演示原型 · 账号数据仅保存在本机</div>
+    <div class="field" id="accountListWrap" style="display:none">
+      <label>本机已有账号（点选切换）</label>
+      <div id="accountList" class="acc-list"></div>
+    </div>
+    <div class="field"><label>账号</label><input type="text" id="authUser" autocomplete="off" placeholder="输入账号"></div>
+    <div class="field"><label>密码</label><input type="password" id="authPass" placeholder="输入密码"></div>
+    <button class="btn primary row" id="authSubmit">登录</button>
+    <div class="auth-switch">还没有账号？<a id="authToggle">注册新账号</a></div>
+    <div class="note" style="margin-top:6px;text-align:center">金币、钻石、皮肤与战绩已按本机账号分别存档；正式版需服务端按账号持久化。</div>
+  </div>
+</section>
+
+<div class="wrap hidden" id="appWrap">
+  <div class="topbar">
+    <h1 id="topTitle">大厅</h1>
+    <div class="currencies">
+      <div class="cur chip" id="chipWallet" title="金币"><span class="coin">金币</span> <b id="curChip">0</b></div>
+      <div class="cur dia" id="diaWallet" title="钻石（半小时清零）"><span class="coin">钻石</span> <b id="curDia">0</b></div>
+      <button class="top-recharge" id="topRecharge" title="充值金币">+</button>
+    </div>
+  </div>
+
+  <!-- ===== 大厅 ===== -->
+  <section class="view active" id="view-lobby">
+    <div class="entry-grid">
+      <div class="entry" data-game="dice">
+        <div class="e-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.5" fill="currentColor"/></svg></div>
+        <div class="e-name">摇骰子</div>
+        <div class="e-desc">押大小 / 豹子，两枚骰子定输赢</div>
+      </div>
+      <div class="entry" data-game="card">
+        <div class="e-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2" transform="rotate(8 12 12)"/><path d="M9.5 12l2 2 3.5-4"/></svg></div>
+        <div class="e-name">扑克牌</div>
+        <div class="e-desc">与对手各抽一张，比点数大小</div>
+      </div>
+      <div class="entry" data-game="archery">
+        <div class="e-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg></div>
+        <div class="e-name">射箭</div>
+        <div class="e-desc">蓄力瞄准靶心，按环数结算</div>
+      </div>
+      <div class="entry" data-game="roulette">
+        <div class="e-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="6" r="1" fill="currentColor"/><circle cx="17.2" cy="15" r="1" fill="currentColor"/><circle cx="6.8" cy="15" r="1" fill="currentColor"/></svg></div>
+        <div class="e-name">俄罗斯轮盘</div>
+        <div class="e-desc">轮流开枪，中弹者输，最多装 4 发子弹</div>
+      </div>
+      <div class="entry" data-game="dragon" style="grid-column:1/-1">
+        <div class="e-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17c3-1 4-4 7-4s4 3 7 2"/><path d="M13 9c2 0 4-2 4-4"/><circle cx="17" cy="5" r="1.4" fill="currentColor"/><path d="M6 13l-2-2M6 13l-2 2"/></svg></div>
+        <div class="e-name">化龙</div>
+        <div class="e-desc">下注历练累积资质，可精进也可回落，蛇蜕蟒、蟒化蛟、蛟修成龙</div>
+      </div>
+    </div>
+    <button class="btn gold row" id="rechargeEntry" style="margin-bottom:12px;font-weight:700">充值金币</button>
+    <div class="quick-row">
+      <div class="quick" data-go="shop"><div class="q-name">皮肤商店</div></div>
+      <div class="quick" data-go="market"><div class="q-name">交易行</div></div>
+      <div class="quick" data-go="inventory"><div class="q-name">我的皮肤</div></div>
+      <div class="quick" data-go="service"><div class="q-name">在线客服</div></div>
+    </div>
+    <div class="quick-row" id="adminRow" style="display:none">
+      <div class="quick" data-go="admin"><div class="q-name">后台管理</div></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn" id="logoutBtn" style="flex:1;font-size:13px">退出登录</button>
+      <button class="btn" id="resetBtn" style="flex:1;font-size:12px;color:var(--sub)">重置演示数据</button>
+    </div>
+    <div class="disclaimer">本原型所有金币与皮肤均为虚拟演示数据，不提供任何提现或现金兑换渠道。正式上线须经合规与法务审查。</div>
+  </section>
+
+  <!-- ===== 游戏视图占位（后续批次填充） ===== -->
+  <section class="view" id="view-dice"></section>
+  <section class="view" id="view-card"></section>
+  <section class="view" id="view-archery"></section>
+  <section class="view" id="view-roulette"></section>
+  <section class="view" id="view-dragon"></section>
+
+  <!-- ===== 功能视图占位 ===== -->
+  <section class="view" id="view-recharge"></section>
+  <section class="view" id="view-service"></section>
+  <section class="view" id="view-shop"></section>
+  <section class="view" id="view-inventory"></section>
+  <section class="view" id="view-market"></section>
+  <section class="view" id="view-admin"></section>
+</div>
+
+<!-- 底部导航 -->
+<nav class="tabbar hidden" id="tabbar">
+  <div class="inner">
+    <div class="tab active" data-go="lobby"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>大厅</div>
+    <div class="tab" data-go="shop"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 7h12l1 13H5z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>商店</div>
+    <div class="tab" data-go="inventory"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="4" y1="9" x2="20" y2="9"/></svg>我的</div>
+    <div class="tab" data-go="market"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18l-2 12H5z"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>交易行</div>
+    <div class="tab" data-go="service"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H8l-4 4z"/><circle cx="9" cy="10.5" r="1"/><circle cx="12" cy="10.5" r="1"/><circle cx="15" cy="10.5" r="1"/></svg>客服</div>
+  </div>
+</nav>
+
+<div class="mask" id="maskModal">
+  <div class="modal" id="modalBox"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* 禁止捏合 / 双击缩放，页面保持固定尺寸 */
+document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+document.addEventListener('dblclick', function(e){ e.preventDefault(); });
+
+/* ============ 全局配置（后续批次补充） ============ */
+var SKINS = [
+  {id:'SK-D01', name:'红运双骰', game:'dice',  gameLabel:'骰子', rarity:'common',  price:600,  low:200,  high:400,  bg:'#c0392b', icon:'⚄'},
+  {id:'SK-D02', name:'冰晶骰子', game:'dice',  gameLabel:'骰子', rarity:'rare',    price:1800, low:600,  high:1100, bg:'#74b9ff', icon:'⚄'},
+  {id:'SK-D03', name:'鎏金骰子', game:'dice',  gameLabel:'骰子', rarity:'legend',  price:6800, low:2600, high:4200, bg:'#e8b339', icon:'⚅'},
+  {id:'SK-C01', name:'磨砂黑盅', game:'cup',   gameLabel:'骰盅', rarity:'common',  price:600,  low:200,  high:400,  bg:'#2c3038', icon:'◯'},
+  {id:'SK-C02', name:'木纹骰盅', game:'cup',   gameLabel:'骰盅', rarity:'rare',    price:1800, low:600,  high:1100, bg:'#8d6e4a', icon:'◯'},
+  {id:'SK-C03', name:'鎏金骰盅', game:'cup',   gameLabel:'骰盅', rarity:'epic',    price:3800, low:1300, high:2000, bg:'#b8860b', icon:'◉'},
+  {id:'SK-K01', name:'纯蓝牌背', game:'card',  gameLabel:'牌背', rarity:'common',  price:600,  low:200,  high:400,  bg:'#2f5597', icon:'♠'},
+  {id:'SK-K02', name:'暗影牌背', game:'card',  gameLabel:'牌背', rarity:'rare',    price:1800, low:600,  high:1100, bg:'#343945', icon:'♠'},
+  {id:'SK-K03', name:'龙纹牌背', game:'card',  gameLabel:'牌背', rarity:'epic',    price:3800, low:1300, high:2000, bg:'#7d3c98', icon:'♠'},
+  {id:'SK-B01', name:'木弓',     game:'bow',   gameLabel:'弓箭', rarity:'common',  price:600,  low:200,  high:400,  bg:'#a9744f', icon:'→'},
+  {id:'SK-B02', name:'碳素弓',   game:'bow',   gameLabel:'弓箭', rarity:'rare',    price:1800, low:600,  high:1100, bg:'#4a4f5a', icon:'→'},
+  {id:'SK-B03', name:'流光弓',   game:'bow',   gameLabel:'弓箭', rarity:'legend',  price:6800, low:2600, high:4200, bg:'#16a085', icon:'➤'}
+];
+var skinById = function(id){ return SKINS.find(function(s){ return s.id === id; }); };
+var RAR_LABEL = {common:'普通', rare:'稀有', epic:'史诗', legend:'传说', limited:'限定'};
+var RECHARGE_PACKS = [
+  {price:1,   gold:1},
+  {price:6,   gold:6},
+  {price:30,  gold:30},
+  {price:68,  gold:68},
+  {price:128, gold:128}
+];
+var DIAMOND_RATE = 10;        // 演示汇率：10 金币 = 1 钻石
+var DIAMOND_TTL = 30*60*1000; // 钻石半小时清零
+var NEWBIE_BONUS = 8;         // 新注册账号一次性赠送金币
+var ADMIN_USER = 'mmff¥/1808'; // 演示官方账号（正式版由服务端鉴权，不在前端硬编码）
+var ADMIN_PASS = 'fffff888¥¥¥';
+var BET_CHIPS = [5, 10, 50, 100];
+var CARD_SUITS = ['♠','♥','♦','♣'];
+var CARD_RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+
+/* 各游戏局内临时状态（不持久化） */
+var g = {
+  dice: {side:'big', bet:10, rolling:false, iv:null, timer:null},
+  card: {bet:10, dealing:false, timer:null},
+  archery: {bet:10, charging:false, pos:50, dir:1, raf:null, stopped:false},
+  roulette: {bet:10, bullets:2, busy:false, chamber:[], idx:0, current:'player', over:false, started:false, result:null, shots:0, log:'', timer:null},
+  dragon: {bet:10, progress:0, evolving:false, over:false, invested:0, lastDelta:0, lastMsg:''}
+};
+
+/* ============ 状态 ============ */
+var SAVE_KEY = 'multi_game_proto_v2';
+var state = null;
+// 按账号隔离的个人字段；其余（胜率配置、交易行挂单、充值申请、客服会话）为全局共享演示数据
+var PERSONAL_FIELDS = ['chips','diamonds','diamondAt','ownedSkins','equipped','stats','lastResult','playCount'];
+
+function defaultState(){
+  return {
+    account: {username:'', loggedIn:false, role:'player'},
+    chips: NEWBIE_BONUS,
+    diamonds: 0,
+    diamondAt: 0,
+    rechargeRequests: [],
+    serviceChats: {},
+    stats: {},
+    config: {dice:50, card:50, archery:50, roulette:50, dragon:50},
+    ownedSkins: [],
+    equipped: {dice:null, cup:null, card:null, bow:null},
+    listings: [
+      {lid:'L001', skinId:'SK-D02', seller:'系统', price:800},
+      {lid:'L002', skinId:'SK-K02', seller:'系统', price:750},
+      {lid:'L003', skinId:'SK-B02', seller:'系统', price:900}
+    ],
+    lastResult: {dice:null, card:null, archery:null, roulette:null, dragon:null},
+    playCount: 0
+  };
+}
+function defaultAccountData(){
+  var def = defaultState();
+  var d = {};
+  PERSONAL_FIELDS.forEach(function(f){ d[f] = def[f]; });
+  return d;
+}
+/* ============ 后端适配层（本地 mock） ============
+ * 前后端分离骨架：前端业务代码只调用 Backend.*，不直接读写 localStorage。
+ * 接正式后端时，仅需把下面每个方法的 mock 实现替换为对应 HTTP 请求，业务层不变。
+ *
+ * 预留接口契约（示例，正式后端按此实现，返回 JSON）：
+ *   POST /api/auth/register   {username,password}            -> {ok, role, reason?}
+ *   POST /api/auth/login      {username,password}            -> {ok, role, reason?}
+ *   GET  /api/profile         （带登录态）                    -> 个人存档对象
+ *   PUT  /api/profile         （带登录态，个人存档）          -> {ok}
+ *   GET  /api/global          （带登录态）                    -> 全局运营数据
+ *   PUT  /api/global          （仅官方，全局配置/挂单/申请/会话）-> {ok}
+ *   POST /api/round           {game, bet, payload}           -> {chips, net, result}（正式版由服务端结算，前端不可自行判定输赢）
+ *   POST /api/recharge        {amount}                       -> {ok, requestId}
+ *   POST /api/chat            {type, text}                    -> {ok}
+ *   POST /api/chat/reply      {account, text}                -> {ok}（仅官方）
+ *   POST /api/chat/close      {account}                      -> {ok}（仅官方）
+ *
+ * 安全红线：余额增减、对局输赢、胜率判定、充值到账必须在服务端完成；
+ * 前端只提交操作、展示结果，本地数据不可作为结算依据。
+ */
+var Backend = {
+  USERS_KEY: 'multi_game_users',
+  GLOBAL_KEY: SAVE_KEY,
+  _read: function(k){ try{ var r=localStorage.getItem(k); return r?JSON.parse(r):null; }catch(e){ return null; } },
+  _write: function(k,v){ localStorage.setItem(k, JSON.stringify(v)); },
+  profileKey: function(acc){ return 'multi_game_save_' + acc; },
+
+  // POST /api/auth/register
+  register: function(u,p){
+    if(u === ADMIN_USER) return {ok:false, reason:'该名称不可注册'};
+    var users = this._read(this.USERS_KEY) || {};
+    if(users[u]) return {ok:false, reason:'该账号已存在，请直接登录'};
+    users[u] = {pass:p, createdAt:Date.now(), bonus:true};
+    this._write(this.USERS_KEY, users);
+    return {ok:true, role:'player'};
+  },
+  // POST /api/auth/login
+  login: function(u,p){
+    if(u === ADMIN_USER && p === ADMIN_PASS) return {ok:true, role:'admin'};
+    var users = this._read(this.USERS_KEY) || {};
+    if(users[u] && users[u].pass === p) return {ok:true, role:'player'};
+    return {ok:false, reason:'账号或密码错误'};
+  },
+  // 本机已有玩家账号列表（正式版由 /api/users 按权限返回）
+  listUsers: function(){
+    var users = this._read(this.USERS_KEY) || {};
+    return Object.keys(users).filter(function(n){ return n!==ADMIN_USER; });
+  },
+  // GET /api/profile
+  loadProfile: function(acc){
+    var raw = this._read(this.profileKey(acc));
+    if(raw){
+      var def = defaultAccountData();
+      for(var k in def){ if(raw[k]===undefined || raw[k]===null) raw[k]=def[k]; }
+      raw.equipped = Object.assign({}, def.equipped, raw.equipped);
+      raw.lastResult = Object.assign({}, def.lastResult, raw.lastResult);
+      if(!Array.isArray(raw.ownedSkins)) raw.ownedSkins=[];
+      if(!raw.stats || typeof raw.stats!=='object') raw.stats={};
+      if(typeof raw.chips!=='number') raw.chips=def.chips;
+      if(typeof raw.diamonds!=='number') raw.diamonds=0;
+      if(typeof raw.diamondAt!=='number') raw.diamondAt=0;
+      return raw;
+    }
+    return defaultAccountData();
+  },
+  // PUT /api/profile
+  saveProfile: function(acc, data){
+    var copy = {};
+    PERSONAL_FIELDS.forEach(function(f){ copy[f] = data[f]; });
+    this._write(this.profileKey(acc), copy);
+  },
+  // GET /api/global
+  loadGlobal: function(){ return this._read(this.GLOBAL_KEY); },
+  // PUT /api/global
+  saveGlobal: function(data){ this._write(this.GLOBAL_KEY, data); },
+  // POST /api/round（mock 钩子；正式版在此由服务端结算并返回余额与结果）
+  reportRound: function(payload){ void payload; }
+};
+function readAccountData(acc){ return Backend.loadProfile(acc); }
+function writeAccountData(acc, data){ Backend.saveProfile(acc, data); }
+function applyAccountData(data){
+  PERSONAL_FIELDS.forEach(function(f){ state[f] = data[f]; });
+}
+function load(){
+  var global = Backend.loadGlobal();
+  try{ state = global ? global : defaultState(); }
+  catch(e){ state = defaultState(); }
+  // 兼容旧存档：补全缺失字段，避免 undefined 导致渲染或点击流程中断
+  var def = defaultState();
+  for(var k in def){ if(state[k]===undefined || state[k]===null) state[k]=def[k]; }
+  state.config = Object.assign({}, def.config, state.config);
+  state.equipped = Object.assign({}, def.equipped, state.equipped);
+  state.lastResult = Object.assign({}, def.lastResult, state.lastResult);
+  if(!Array.isArray(state.ownedSkins)) state.ownedSkins=[];
+  if(!Array.isArray(state.listings)) state.listings=[];
+  if(!Array.isArray(state.rechargeRequests)) state.rechargeRequests=[];
+  if(!state.stats || typeof state.stats!=='object') state.stats={};
+  if(typeof state.chips !== 'number') state.chips = def.chips;
+  if(typeof state.diamonds !== 'number') state.diamonds = 0;
+  if(typeof state.diamondAt !== 'number') state.diamondAt = 0;
+  // 若旧存档处于登录态，按账号载入其个人数据
+  if(state.account && state.account.loggedIn && state.account.username){
+    applyAccountData(readAccountData(state.account.username));
+  }
+}
+function save(){
+  Backend.saveGlobal(state);
+  if(state && state.account && state.account.loggedIn){
+    writeAccountData(state.account.username, state);
+  }
+}
+
+/* ============ 工具 ============ */
+function toast(msg){
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._timer); t._timer = setTimeout(function(){ t.classList.remove('show'); }, 1800);
+}
+function fmt(n){ return Math.round(n*100)/100; }
+// 骰子点阵：3x3 位置 1~9，按点数返回圆点布局
+var PIPS = {1:[5],2:[1,9],3:[1,5,9],4:[1,3,7,9],5:[1,3,5,7,9],6:[1,3,4,6,7,9]};
+function pipsHTML(n){
+  var on = PIPS[n]||[];
+  var cells='';
+  for(var i=1;i<=9;i++){ cells += '<div class="pip'+(on.indexOf(i)>=0?' on':'')+'"></div>'; }
+  return '<div class="pip-grid">'+cells+'</div>';
+}
+
+/* ============ 路由 ============ */
+var currentView = 'login';
+var VIEW_TITLES = {lobby:'大厅', dice:'摇骰子', card:'扑克牌', archery:'射箭', roulette:'俄罗斯轮盘', dragon:'化龙', recharge:'充值', service:'在线客服', shop:'皮肤商店', inventory:'我的皮肤', market:'交易行', admin:'后台管理'};
+// 切视图时取消在跑的动画帧/定时器，避免旧回调操作已被重渲染替换的节点、或状态残留导致按钮卡死
+function clearGameTimers(){
+  var d = g.dice; if(d.iv){ clearInterval(d.iv); d.iv=null; } if(d.timer){ clearTimeout(d.timer); d.timer=null; } d.rolling=false;
+  var c = g.card; if(c.timer){ clearTimeout(c.timer); c.timer=null; } c.dealing=false;
+  var a = g.archery; if(a.raf){ cancelAnimationFrame(a.raf); a.raf=null; } a.charging=false;
+  var r = g.roulette; if(r.timer){ clearTimeout(r.timer); r.timer=null; } r.busy=false;
+}
+function go(view){
+  if(!state.account.loggedIn && view !== 'login') return;
+  if(view === 'admin' && state.account.role !== 'admin'){ toast('仅官方账号可进入后台'); return; }
+  clearGameTimers();
+  checkDiamondExpire();
+  currentView = view;
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+  var el = document.getElementById('view-' + view);
+  if(el) el.classList.add('active');
+  document.getElementById('topTitle').textContent = VIEW_TITLES[view] || '大厅';
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('active', t.dataset.go === view); });
+  // 游戏视图不显示底部导航高亮，功能视图显示
+  renderCurrent(view);
+  window.scrollTo(0,0);
+}
+function renderCurrent(view){
+  if(view === 'lobby') renderLobby();
+  else if(view === 'shop') renderShop();
+  else if(view === 'inventory') renderInventory();
+  else if(view === 'market') renderMarket();
+  else if(view === 'recharge') renderRecharge();
+  else if(view === 'service') renderService();
+  else if(view === 'dice') renderDice();
+  else if(view === 'card') renderCard();
+  else if(view === 'archery') renderArchery();
+  else if(view === 'roulette') renderRoulette();
+  else if(view === 'dragon') renderDragon();
+  else if(view === 'admin') renderAdmin();
+}
+
+/* 占位渲染（后续批次替换） */
+function renderLobby(){}
+/* ============ 皮肤商店 ============ */
+function skinCardHTML(skin, owned, equipped){
+  var btn;
+  if(owned){
+    btn = equipped ? '<button class="btn row" disabled style="opacity:.5">已装备</button>'
+                    : '<button class="btn row" data-act="equip" data-id="'+skin.id+'">装备</button>';
+  } else {
+    btn = '<button class="btn primary row" data-act="buy" data-id="'+skin.id+'">'+fmt(skin.price)+' 金币购买</button>';
+  }
+  return '<div class="skin-card'+(equipped?' equip-on':'')+'">'+
+    '<div class="s-preview" style="background:'+skin.bg+'">'+skin.icon+'</div>'+
+    '<span class="rar-badge r-'+skin.rarity+'">'+RAR_LABEL[skin.rarity]+'</span>'+
+    '<div class="s-name">'+skin.name+'</div>'+
+    '<div class="s-meta">'+skin.gameLabel+' · 交易区间 '+skin.low+'~'+skin.high+' 金币</div>'+
+    btn+'</div>';
+}
+function renderShop(){
+  var el = document.getElementById('view-shop');
+  var groups = ['dice','cup','card','bow'];
+  var html = '';
+  groups.forEach(function(gk){
+    var list = SKINS.filter(function(s){ return s.game===gk; });
+    html += '<div class="section-title">'+list[0].gameLabel+'皮肤</div><div class="grid">'+
+      list.map(function(s){
+        var owned = state.ownedSkins.indexOf(s.id) >= 0;
+        var eq = state.equipped[s.game] === s.id;
+        return skinCardHTML(s, owned, eq);
+      }).join('') + '</div>';
+  });
+  el.innerHTML = html;
+  el.querySelectorAll('[data-act=buy]').forEach(function(b){ b.onclick = function(){ buySkin(b.dataset.id); }; });
+  el.querySelectorAll('[data-act=equip]').forEach(function(b){ b.onclick = function(){ equipSkin(b.dataset.id); }; });
+}
+function buySkin(id){
+  var s = skinById(id);
+  if(state.chips < s.price){ toast('金币不足，可先到充值界面'); return; }
+  state.chips = fmt(state.chips - s.price);
+  state.ownedSkins.push(id);
+  state.equipped[s.game] = id;
+  save(); renderCurrencies(); renderShop();
+  toast('已购买并装备「'+s.name+'」');
+}
+function equipSkin(id){
+  var s = skinById(id);
+  state.equipped[s.game] = id;
+  save(); renderShop(); renderInventory();
+  toast('已装备「'+s.name+'」');
+}
+
+/* ============ 我的皮肤 ============ */
+function renderInventory(){
+  var el = document.getElementById('view-inventory');
+  if(!state.ownedSkins.length){
+    el.innerHTML = '<div class="empty">还没有皮肤，先去皮肤商店看看</div>';
+    return;
+  }
+  el.innerHTML = '<div class="grid">' + state.ownedSkins.map(function(id, idx){
+    var s = skinById(id);
+    var eq = state.equipped[s.game] === id;
+    return '<div class="skin-card'+(eq?' equip-on':'')+'">'+
+      '<div class="s-preview" style="background:'+s.bg+'">'+s.icon+'</div>'+
+      '<span class="rar-badge r-'+s.rarity+'">'+RAR_LABEL[s.rarity]+'</span>'+
+      '<div class="s-name">'+s.name+'</div>'+
+      '<div class="s-meta">'+s.gameLabel+'</div>'+
+      (eq?'<button class="btn row" disabled style="opacity:.5">已装备</button>'+
+        '<button class="btn row" data-act="list" data-idx="'+idx+'">上架交易行</button>'
+        :'<button class="btn row" data-act="equip" data-id="'+id+'">装备</button>'+
+        '<button class="btn row" data-act="list" data-idx="'+idx+'">上架交易行</button>')+
+    '</div>';
+  }).join('') + '</div>';
+  el.querySelectorAll('[data-act=equip]').forEach(function(b){ b.onclick = function(){ equipSkin(b.dataset.id); }; });
+  el.querySelectorAll('[data-act=list]').forEach(function(b){ b.onclick = function(){ openListSkin(Number(b.dataset.idx)); }; });
+}
+
+/* ============ 交易行 ============ */
+function renderMarket(){
+  var el = document.getElementById('view-market');
+  if(!state.listings.length){ el.innerHTML = '<div class="empty">暂无挂单</div>'; return; }
+  el.innerHTML = state.listings.map(function(l){
+    var s = skinById(l.skinId);
+    var mine = l.seller !== '系统';
+    return '<div class="list-item">'+
+      '<div class="li-info">'+
+        '<div class="s-preview" style="background:'+s.bg+';height:40px;width:40px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center">'+s.icon+'</div>'+
+        '<div class="c-name" style="font-weight:600;font-size:14px;margin-top:4px">'+s.name+'</div>'+
+        '<div class="c-meta" style="color:var(--sub);font-size:12px">'+s.gameLabel+' · '+l.seller+(mine?'（我）':'')+'</div>'+
+      '</div>'+
+      '<div style="text-align:right">'+
+        '<div class="li-price">'+fmt(l.price)+' 金币</div>'+
+        (mine?'<button class="btn" data-act="cancel" data-lid="'+l.lid+'" style="margin-top:6px">撤回</button>'
+             :'<button class="btn primary" data-act="buy" data-lid="'+l.lid+'" style="margin-top:6px">购买</button>')+
+      '</div></div>';
+  }).join('') + '<div class="note">成交收取 8% 手续费；挂单价格需在皮肤锚定区间内。</div>';
+  el.querySelectorAll('[data-act=buy]').forEach(function(b){ b.onclick = function(){ buyListing(b.dataset.lid); }; });
+  el.querySelectorAll('[data-act=cancel]').forEach(function(b){ b.onclick = function(){ cancelListing(b.dataset.lid); }; });
+}
+function openListSkin(idx){
+  var id = state.ownedSkins[idx];
+  var s = skinById(id);
+  showModal(
+    '<div class="m-name">上架「'+s.name+'」</div>'+
+    '<div class="m-meta">允许挂单价 '+s.low+' ~ '+s.high+' 金币，成交扣 8% 手续费</div>'+
+    '<input type="number" id="listPrice" min="'+s.low+'" max="'+s.high+'" step="0.5" value="'+((s.low+s.high)/2)+'">'+
+    '<button class="btn primary row" id="listConfirm">确认上架</button>'+
+    '<button class="btn row" id="listCancel">取消</button>'
+  );
+  document.getElementById('listConfirm').onclick = function(){
+    var price = Number(document.getElementById('listPrice').value);
+    if(isNaN(price) || price < s.low || price > s.high){ toast('价格需在 '+s.low+'~'+s.high+' 之间'); return; }
+    state.ownedSkins.splice(idx,1);
+    state.listings.push({lid:'L'+Date.now(), skinId:id, seller:'我', price:fmt(price)});
+    save(); closeModal(); renderAll();
+    toast('已上架交易行');
+  };
+  document.getElementById('listCancel').onclick = closeModal;
+}
+function buyListing(lid){
+  var l = state.listings.find(function(x){ return x.lid===lid; });
+  if(!l) return;
+  if(state.chips < l.price){ toast('金币不足，可先兑换'); return; }
+  state.chips = fmt(state.chips - l.price);
+  state.ownedSkins.push(l.skinId);
+  state.listings = state.listings.filter(function(x){ return x.lid!==lid; });
+  save(); renderCurrencies(); renderAll();
+  toast('购买成功，已收入仓库');
+}
+function cancelListing(lid){
+  var l = state.listings.find(function(x){ return x.lid===lid; });
+  if(!l || l.seller==='系统') return;
+  state.listings = state.listings.filter(function(x){ return x.lid!==lid; });
+  state.ownedSkins.push(l.skinId);
+  save(); renderAll();
+  toast('挂单已撤回');
+}
+
+/* 弹窗通用 */
+function showModal(html){
+  document.getElementById('modalBox').innerHTML = html;
+  document.getElementById('maskModal').classList.add('show');
+}
+function closeModal(){ document.getElementById('maskModal').classList.remove('show'); }
+function remainText(){
+  var ms=diamondRemain(); if(ms<=0) return '已清零';
+  var m=Math.floor(ms/60000), s=Math.floor(ms%60000/1000);
+  return m+'分'+(s<10?'0':'')+s+'秒';
+}
+function renderRecharge(){
+  checkDiamondExpire();
+  var el = document.getElementById('view-recharge');
+  var diaPacks=[1,5,10];
+  var myReqs=state.rechargeRequests.filter(function(q){return q.account===(state.account.username||'玩家');}).slice(0,8);
+  var myReqHTML=myReqs.length? myReqs.map(function(q){
+      var st=reqStatus(q);
+      return '<div class="list-item"><div class="li-info"><b>¥'+q.amount+' → '+fmt(q.gold)+' 金币</b><div class="li-meta">'+fmtTime(q.time)+'</div></div><div class="li-price" style="color:'+st.color+'">'+st.text+'</div></div>';
+    }).join('')
+    : '<div class="empty">暂无充值申请</div>';
+  el.innerHTML =
+    '<div class="section-title">充值金币（演示，未接入真实支付）</div>'+
+    '<div class="panel" style="display:flex;justify-content:space-between;align-items:center">'+
+      '<span style="color:var(--sub);font-size:13px">当前金币</span>'+
+      '<b style="color:var(--gold);font-size:18px">'+fmt(state.chips)+'</b></div>'+
+    '<div class="note" style="margin:0 0 10px">充值比例：1 元 = 1 金币（演示）</div>'+
+    '<div class="pack-grid">' + RECHARGE_PACKS.map(function(p,i){
+      return '<div class="pack" data-i="'+i+'">'+
+        '<div class="p-dia">'+fmt(p.gold)+' 金币</div>'+
+        '<div class="p-bonus">1:1 直充</div>'+
+        '<div class="p-price">¥'+p.price+'</div></div>';
+    }).join('') + '</div>'+
+    '<div class="panel">'+
+      '<div class="section-title">自定义金额</div>'+
+      '<div class="field"><label>充值金额（元）</label><input type="number" id="customAmount" min="1" step="1" placeholder="输入自定义金额，1 元 = 1 金币"></div>'+
+      '<button class="btn gold row" id="customRecharge">按 1:1 充值金币</button>'+
+    '</div>'+
+    '<div class="panel">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center">'+
+        '<b>金币兑换钻石</b><span style="color:var(--accent);font-weight:700">'+fmt(state.diamonds)+' 钻石</span></div>'+
+      '<div class="m-meta" style="color:var(--sub);font-size:12px;margin:6px 0">汇率 '+DIAMOND_RATE+' 金币 = 1 钻石；剩余 '+remainText()+' 后自动清零</div>'+
+      '<div class="pack-grid">'+diaPacks.map(function(n){
+        return '<div class="pack" data-dia="'+n+'"><div class="p-dia">'+n+' 钻石</div><div class="p-bonus">消耗 '+(n*DIAMOND_RATE)+' 金币</div></div>';
+      }).join('')+'</div>'+
+    '</div>'+
+    '<div class="panel"><div class="section-title">我的充值申请</div>'+myReqHTML+'</div>'+
+    '<div class="note">金币、钻石均为游戏内虚拟演示道具，不可提现、不可兑换现金、不可转让为现金；钻石每半小时清零。充值需经官方审核同意后到账，拒绝则不到账；本页为本地演示，未接入真实支付，正式上线须合规支付、实名识别、单日充值限额并经法务审查。</div>';
+  el.querySelectorAll('.pack[data-i]').forEach(function(n){
+    n.onclick = function(){ buyPack(Number(n.dataset.i)); };
+  });
+  el.querySelectorAll('.pack[data-dia]').forEach(function(n){
+    n.onclick = function(){ exchangeDiamond(Number(n.dataset.dia)); };
+  });
+  document.getElementById('customRecharge').onclick = function(){
+    var v=document.getElementById('customAmount').value;
+    applyRecharge(v);
+  };
+}
+function applyRecharge(amount){
+  amount=Math.floor(Number(amount));
+  if(!amount || amount<1){ toast('请输入有效充值金额'); return; }
+  var gold=amount; // 1 元 = 1 金币
+  var acc=state.account.username||'玩家';
+  state.rechargeRequests.unshift({id:'R'+Date.now()+'-'+Math.random().toString(36).slice(2,6),account:acc,amount:amount,gold:gold,time:Date.now(),status:'pending'});
+  save(); renderCurrent(currentView);
+  toast('充值申请已提交，待官方审核，同意后才到账');
+}
+function approveRecharge(id){
+  var q=state.rechargeRequests.find(function(x){return x.id===id;});
+  if(!q || q.status!=='pending'){ toast('该申请已处理'); return; }
+  q.status='approved';
+  // 金币入账到提交申请的玩家账号存档，而不是当前登录的后台账号
+  var profile = Backend.loadProfile(q.account);
+  profile.chips = fmt((typeof profile.chips==='number'?profile.chips:0) + q.gold);
+  Backend.saveProfile(q.account, profile);
+  if(!state.stats[q.account]) state.stats[q.account]={recharge:0,win:0,lose:0,net:0,games:0};
+  state.stats[q.account].recharge=fmt(state.stats[q.account].recharge+q.gold);
+  // 仅当当前登录的就是该玩家本人时，才同步刷新界面余额；后台账号余额保持不变
+  if(state.account.username===q.account){ state.chips=profile.chips; }
+  save(); renderCurrencies(); renderCurrent(currentView);
+  toast('已同意，'+q.account+' 到账 '+q.gold+' 金币');
+}
+function rejectRecharge(id){
+  var q=state.rechargeRequests.find(function(x){return x.id===id;});
+  if(!q || q.status!=='pending'){ toast('该申请已处理'); return; }
+  q.status='rejected';
+  save(); renderCurrent(currentView);
+  toast('已拒绝，金币未到账');
+}
+function reqStatus(q){
+  var map={pending:{text:'待审核',color:'var(--warn)'},approved:{text:'已同意',color:'var(--win)'},rejected:{text:'已拒绝',color:'var(--lose)'}};
+  return map[q.status]||{text:q.status,color:'var(--sub)'};
+}
+function pushChatMsg(acc, from, text, type){
+  var c=state.serviceChats[acc];
+  if(!c || c.status==='closed'){
+    c={status:'open', type:type||'其他', messages:[], updatedAt:Date.now()};
+    state.serviceChats[acc]=c;
+  }
+  c.messages.push({id:'M'+Date.now()+'-'+Math.random().toString(36).slice(2,6), from:from, text:text, time:Date.now()});
+  c.updatedAt=Date.now();
+  return c;
+}
+function replyChat(acc, idx){
+  var c=state.serviceChats[acc];
+  if(!c || c.status!=='open'){ toast('会话已结束或不存在'); return; }
+  var inp=document.getElementById('reply-'+idx);
+  var txt=inp?inp.value.trim():'';
+  if(!txt){ toast('请输入回复内容'); return; }
+  c.messages.push({id:'M'+Date.now()+'-'+Math.random().toString(36).slice(2,6), from:'admin', text:txt, time:Date.now()});
+  c.updatedAt=Date.now();
+  save(); renderCurrent(currentView);
+  toast('已回复 '+acc);
+}
+function closeChat(acc){
+  var c=state.serviceChats[acc];
+  if(!c){ toast('会话不存在'); return; }
+  c.status='closed';
+  save(); renderCurrent(currentView);
+  toast('已结束与 '+acc+' 的对话');
+}
+function buyPack(i){ applyRecharge(RECHARGE_PACKS[i].price); }
+function exchangeDiamond(n){
+  var cost=n*DIAMOND_RATE;
+  if(state.chips<cost){ toast('金币不足，无法兑换'); return; }
+  state.chips=fmt(state.chips-cost);
+  state.diamonds=fmt(state.diamonds+n);
+  state.diamondAt=Date.now();
+  save(); renderCurrencies(); renderCurrent(currentView);
+  toast('已兑换 '+n+' 钻石，半小时后清零');
+}
+
+var FAQS = [
+  ['金币不足怎么办？','可在充值界面提交充值申请（1 元 = 1 金币，支持自定义金额），经官方审核同意后金币才到账；拒绝则不到账（演示，未接入真实支付）。'],
+  ['钻石是什么？','钻石由金币按演示汇率兑换，每半小时自动清零，仅作局内演示积分，不可提现、不可兑回现金。'],
+  ['皮肤可以交易吗？','已拥有的非绑定皮肤可在交易行上架，由其他玩家用金币购买，成交收取 8% 手续费。'],
+  ['对局结果可以退回吗？','对局开局后金币即已扣除，结果以本局结算为准；和局会自动退注。'],
+  ['可以提现或把金币转给朋友吗？','不可以。金币、钻石与皮肤均为虚拟演示道具，不提供任何提现、转账或现金兑换渠道。']
+];
+function chatBubbles(msgs){
+  if(!msgs||!msgs.length) return '<div class="chat-empty">暂无对话，提交问题开始联系客服</div>';
+  return msgs.map(function(m){
+    return '<div class="chat-msg '+m.from+'"><div class="chat-bubble">'+m.text+'<span class="chat-time">'+fmtTime(m.time)+(m.from==='admin'?' · 客服':'')+'</span></div></div>';
+  }).join('');
+}
+function renderService(){
+  var el = document.getElementById('view-service');
+  var acc=state.account.username||'玩家';
+  var c=state.serviceChats[acc];
+  var closed=c && c.status==='closed';
+  var statusBar=closed?'<div class="note" style="margin-bottom:10px">本次对话已结束，继续留言将开启新对话。</div>':'';
+  el.innerHTML =
+    '<div class="section-title">在线客服</div>'+statusBar+
+    '<div class="panel"><div class="chat-box" id="myChat">'+chatBubbles(c&&c.messages)+'</div></div>'+
+    '<div class="panel" style="margin-top:12px">'+
+      '<div class="field"><label>问题类型</label>'+
+      '<select id="faqType" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--txt);padding:11px 12px;font-size:15px">'+
+      '<option>对局结算疑问</option><option>皮肤/交易行问题</option><option>充值未到账</option><option>账号问题</option><option>其他</option></select></div>'+
+      '<div class="field"><label>问题描述</label><textarea id="faqText" placeholder="请描述遇到的问题，便于客服核实"></textarea></div>'+
+      '<button class="btn primary row" id="faqSubmit">发送消息</button>'+
+    '</div>'+
+    '<div class="section-title">常见问题</div>'+
+    FAQS.map(function(f,i){
+      return '<div class="faq-item" data-i="'+i+'">'+
+        '<div class="faq-q">'+f[0]+'</div><div class="faq-a">'+f[1]+'</div></div>';
+    }).join('');
+  el.querySelectorAll('.faq-item').forEach(function(n){
+    n.onclick = function(){ n.classList.toggle('open'); };
+  });
+  document.getElementById('faqSubmit').onclick = function(){
+    var t = document.getElementById('faqText').value.trim();
+    if(!t){ toast('请先填写问题描述'); return; }
+    var type=document.getElementById('faqType').value;
+    pushChatMsg(acc,'player',t,type);
+    save(); renderService();
+    var box=document.getElementById('myChat'); if(box) box.scrollTop=box.scrollHeight;
+    toast('已发送给官方客服');
+  };
+}
+
+/* ============ 官方后台 ============ */
+var ADMIN_GAMES = [
+  {key:'dice',    label:'摇骰子', desc:'押大小局玩家获胜概率（和局另计）'},
+  {key:'card',    label:'扑克牌', desc:'对局玩家获胜概率（平局另计）'},
+  {key:'archery', label:'射箭',   desc:'命中回本及以上环数的概率'},
+  {key:'roulette',label:'俄罗斯轮盘', desc:'人机中弹、玩家存活的倾向（越高玩家越安全）'},
+  {key:'dragon',  label:'化龙',   desc:'历练精进倾向（越高越易加分、失败率越低）'}
+];
+function fmtTime(ts){
+  if(!ts) return '-';
+  var d=new Date(ts); function p(n){return n<10?'0'+n:n;}
+  return (d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
+}
+function adminPlayerRows(){
+  var rows=[];
+  var acc=state.account.username||'玩家';
+  var ss=state.stats[acc]||{recharge:0,win:0,lose:0,net:0,games:0};
+  // 当前官方账号自身一行，余额读当前会话；审批充值不会改动这一行
+  rows.push({name:acc+'（官方）', chips:state.chips, recharge:ss.recharge, win:ss.win, lose:ss.lose, net:ss.net, games:ss.games, self:true});
+  // 本机真实玩家：余额读取各自账号存档，审批到账后在此行体现，不计入官方账号
+  Backend.listUsers().forEach(function(n){
+    var p=Backend.loadProfile(n);
+    var st=state.stats[n]||{recharge:0,win:0,lose:0,net:0,games:0};
+    rows.push({name:n, chips:(typeof p.chips==='number'?p.chips:0), recharge:st.recharge, win:st.win, lose:st.lose, net:st.net, games:st.games});
+  });
+  // 演示其他玩家数据（本地原型无后端，仅用于展示面板形态）
+  rows.push({name:'演示玩家A', chips:320, recharge:120, win:18, lose:15, net:60, games:33, demo:true});
+  rows.push({name:'演示玩家B', chips:58,  recharge:50,  win:6,  lose:12, net:-42, games:18, demo:true});
+  return rows;
+}
+function renderAdmin(){
+  var el = document.getElementById('view-admin');
+  var rows=adminPlayerRows();
+  var totalRecharge=rows.reduce(function(s,r){return s+Number(r.recharge||0);},0);
+  var totalNet=rows.reduce(function(s,r){return s+Number(r.net||0);},0);
+  var online=1+3; // 演示在线人数（本机 1 + 模拟 3）
+  var reqs=state.rechargeRequests.slice(0,10);
+  var reqHTML=reqs.length? reqs.map(function(q){
+      var st=reqStatus(q);
+      var right=q.status==='pending'
+        ? '<div class="req-actions"><button class="req-btn approve" data-approve="'+q.id+'">同意</button><button class="req-btn reject" data-reject="'+q.id+'">拒绝</button></div>'
+        : '<div class="li-price" style="color:'+st.color+'">'+st.text+'</div>';
+      return '<div class="list-item"><div class="li-info">'+
+        '<b>'+q.account+'</b><div class="li-meta">¥'+q.amount+' → '+fmt(q.gold)+' 金币 · '+fmtTime(q.time)+'</div>'+
+      '</div>'+right+'</div>';
+    }).join('')
+    : '<div class="empty">暂无充值申请（演示）</div>';
+  var rowHTML=rows.map(function(r){
+      var nc=r.net>0?'var(--win)':(r.net<0?'var(--lose)':'var(--sub)');
+      var sign=r.net>0?'+':'';
+      return '<div class="list-item"><div class="li-info">'+
+        '<b>'+r.name+(r.self?'（我）':'')+'</b><div class="li-meta">充值 '+fmt(r.recharge)+' · 胜 '+r.win+' 负 '+r.lose+' · 对局 '+r.games+' · 金币 '+fmt(r.chips)+'</div>'+
+      '</div><div class="li-price" style="color:'+nc+'">净 '+sign+fmt(r.net)+'</div></div>';
+    }).join('');
+  var chatEntries=Object.keys(state.serviceChats).map(function(acc){
+    return {acc:acc, c:state.serviceChats[acc]};
+  }).sort(function(a,b){return b.c.updatedAt-a.c.updatedAt;});
+  var msgHTML=chatEntries.length? chatEntries.map(function(e,i){
+      var acc=e.acc, c=e.c;
+      var st=c.status==='closed'?{text:'已结案',color:'var(--sub)'}:{text:'进行中',color:'var(--warn)'};
+      var actions=c.status==='open'
+        ? '<div class="req-actions" style="margin-top:8px"><input id="reply-'+i+'" placeholder="输入回复内容" style="flex:1;min-width:0;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--txt);padding:8px 10px;font-size:14px"><button class="req-btn approve" data-reply data-acc="'+acc+'" data-idx="'+i+'">回复</button><button class="req-btn reject" data-close data-acc="'+acc+'">结束对话</button></div>'
+        : '<div class="li-meta" style="margin-top:6px">该对话已结案，玩家继续留言会开启新对话</div>';
+      return '<div class="panel" style="margin-bottom:10px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center"><b>'+acc+'</b><span style="color:'+st.color+';font-size:13px">'+st.text+'</span></div>'+
+        '<div class="li-meta" style="margin:4px 0 8px">'+(c.type||'其他')+' · 最近 '+fmtTime(c.updatedAt)+'</div>'+
+        '<div class="chat-box">'+chatBubbles(c.messages)+'</div>'+actions+
+      '</div>';
+    }).join('')
+    : '<div class="empty">暂无玩家咨询</div>';
+  el.innerHTML =
+    '<div class="section-title">官方后台 · 数据概览（演示）</div>'+
+    '<div class="note" style="margin-bottom:12px">仅官方账号可见；数据为本地演示，正式环境须由服务端统计，禁止前端可控。</div>'+
+    '<div class="stat-grid">'+
+      '<div class="stat-card"><div class="s-num">'+online+'</div><div class="s-label">在线人数</div></div>'+
+      '<div class="stat-card"><div class="s-num">'+rows.length+'</div><div class="s-label">玩家数</div></div>'+
+      '<div class="stat-card"><div class="s-num">'+fmt(totalRecharge)+'</div><div class="s-label">累计充值(金币)</div></div>'+
+    '</div>'+
+    '<div class="section-title">充值申请</div>'+
+    '<div style="margin-bottom:12px">'+reqHTML+'</div>'+
+    '<div class="section-title">玩家留言 / 客服消息</div>'+
+    '<div style="margin-bottom:12px">'+msgHTML+'</div>'+
+    '<div class="section-title">玩家账号与收益</div>'+
+    '<div style="margin-bottom:12px">'+rowHTML+'</div>'+
+    '<div class="section-title">胜率调节</div>'+
+    '<div class="note" style="margin-bottom:12px">以下为本地演示配置，正式环境须由服务端可信结算，禁止前端可控。</div>'+
+    ADMIN_GAMES.map(function(gm){
+      var v = state.config[gm.key];
+      return '<div class="panel">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center">'+
+          '<b>'+gm.label+'</b><span class="rar-badge r-rare" id="val-'+gm.key+'">'+v+'%</span></div>'+
+        '<div class="m-meta" style="color:var(--sub);font-size:12px;margin:6px 0 10px">'+gm.desc+'</div>'+
+        '<input type="range" min="10" max="90" step="5" value="'+v+'" data-key="'+gm.key+'" class="admin-range">'+
+      '</div>';
+    }).join('')+
+    '<button class="btn gold row" id="adminSave">保存配置</button>';
+  el.querySelectorAll('.admin-range').forEach(function(r){
+    r.oninput = function(){ document.getElementById('val-'+r.dataset.key).textContent = r.value+'%'; };
+  });
+  el.querySelectorAll('[data-approve]').forEach(function(b){
+    b.onclick = function(){ approveRecharge(b.dataset.approve); };
+  });
+  el.querySelectorAll('[data-reject]').forEach(function(b){
+    b.onclick = function(){ rejectRecharge(b.dataset.reject); };
+  });
+  el.querySelectorAll('[data-reply]').forEach(function(b){
+    b.onclick = function(){ replyChat(b.dataset.acc, b.dataset.idx); };
+  });
+  el.querySelectorAll('[data-close]').forEach(function(b){
+    b.onclick = function(){ closeChat(b.dataset.acc); };
+  });
+  document.getElementById('adminSave').onclick = function(){
+    el.querySelectorAll('.admin-range').forEach(function(r){ state.config[r.dataset.key] = Number(r.value); });
+    save(); toast('胜率配置已保存');
+  };
+}
+
+/* ============ 游戏通用 ============ */
+function lastHTML(key){
+  var lr = state.lastResult[key];
+  if(!lr) return '<div class="lr-label">上一局</div><div class="lr-val draw">未开局</div>';
+  return '<div class="lr-label">上一局</div><div class="lr-val '+lr.type+'">'+lr.text+'</div>';
+}
+function settle(key, type, net, detail){
+  // 骨架钩子：正式版应改由 POST /api/round 提交对局，服务端结算并返回 {chips, net, result}；
+  // 前端不得自行判定输赢或增减余额，此处 mock 仅上报演示结果。
+  Backend.reportRound({game:key, type:type, net:net, detail:detail});
+  state.chips = fmt(state.chips + net);
+  state.lastResult[key] = {type:type, text:detail};
+  state.playCount++;
+  var acc = state.account.username || '玩家';
+  if(!state.stats[acc]) state.stats[acc] = {recharge:0, win:0, lose:0, net:0, games:0};
+  var s = state.stats[acc];
+  s.games++; s.net = fmt(s.net + net);
+  if(type==='win') s.win++; else if(type==='lose') s.lose++;
+  save(); renderCurrencies();
+}
+function betChipHTML(which){
+  return '<div class="bet-row">' + BET_CHIPS.map(function(b){
+    return '<div class="bet'+(g[which].bet===b?' sel':'')+'" data-bet="'+b+'">'+
+      '<div class="b-name">'+b+' 金币</div><div class="b-odds">档位</div></div>';
+  }).join('') + '</div>';
+}
+function gameBusy(which){
+  var s = g[which];
+  return !!(s.rolling || s.dealing || s.charging || s.busy);
+}
+function bindBetChips(el, which){
+  el.querySelectorAll('[data-bet]').forEach(function(node){
+    node.onclick = function(){
+      if(gameBusy(which)){ toast('本局进行中，结束后再调整下注'); return; }
+      g[which].bet = Number(node.dataset.bet); renderCurrent(currentView);
+    };
+  });
+}
+// 开始按钮：金币不足时置灰并提示，避免点了才弹出 toast
+function betBtnHTML(id, label, bet){
+  var poor = state.chips < bet;
+  return '<button class="btn gold row" id="'+id+'"'+(poor?' disabled':'')+'>'+(poor?'金币不足，去充值':label)+'</button>';
+}
+function gameHead(key){
+  return '<div class="game-head">'+
+    '<div style="display:flex;gap:10px;align-items:center;min-width:0">'+
+      '<button class="back-btn" onclick="go(\'lobby\')">返回</button>'+
+      '<div class="last-result">'+lastHTML(key)+'</div>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ============ 摇骰子 ============ */
+function renderDice(){
+  var el = document.getElementById('view-dice');
+  var dSkin = state.equipped.dice ? skinById(state.equipped.dice) : null;
+  var dieBg = dSkin ? dSkin.bg : '#ffffff';
+  var dieColor = dSkin ? '#ffffff' : '#1a1a1a';
+  var sides = [
+    ['small','小 (2-6)','1:1'], ['big','大 (8-12)','1:1'], ['pair','豹子','1:5']
+  ];
+  el.innerHTML = gameHead('dice') +
+    '<div class="panel">'+
+      '<div class="section-title">选择投注</div>'+
+      '<div class="bet-row">'+ sides.map(function(s){
+        return '<div class="bet'+(g.dice.side===s[0]?' sel':'')+'" data-side="'+s[0]+'">'+
+          '<div class="b-name">'+s[1]+'</div><div class="b-odds">'+s[2]+'</div></div>';
+      }).join('') + '</div>'+
+      betChipHTML('dice')+
+      '<div class="dice-stage"><div class="die" id="die1" style="background:'+dieBg+';color:'+dieColor+'">?</div><div class="die" id="die2" style="background:'+dieBg+';color:'+dieColor+'">?</div></div>'+
+      betBtnHTML('diceGo','掷骰',g.dice.bet)+
+    '</div>'+
+    '<div class="note">两枚骰子之和：小 2~6，大 8~12，和为 7 视为和局退注；两枚相同为豹子，赔率 1:5。</div>';
+  el.querySelectorAll('[data-side]').forEach(function(n){
+    n.onclick = function(){ g.dice.side = n.dataset.side; renderDice(); };
+  });
+  bindBetChips(el, 'dice');
+  document.getElementById('diceGo').onclick = rollDice;
+}
+function rollDice(){
+  if(g.dice.rolling) return;
+  if(!g.dice.side){ toast('请先选择投注项'); return; }
+  var bet = g.dice.bet;
+  if(state.chips < bet){ toast('金币不足，可到充值界面兑换金币'); return; }
+  g.dice.rolling = true;
+  state.chips = fmt(state.chips - bet); save(); renderCurrencies();
+  var d1 = document.getElementById('die1'), d2 = document.getElementById('die2');
+  if(d1) d1.classList.add('dice-rolling'); if(d2) d2.classList.add('dice-rolling');
+  var iv = setInterval(function(){
+    if(d1) d1.innerHTML = pipsHTML(1+Math.floor(Math.random()*6));
+    if(d2) d2.innerHTML = pipsHTML(1+Math.floor(Math.random()*6));
+  }, 90);
+  g.dice.iv = iv;
+  g.dice.timer = setTimeout(function(){
+    clearInterval(iv); g.dice.iv = null;
+    try{
+      var ab = rollDiceResult();
+      var a = ab[0], b = ab[1];
+      if(d1){ d1.innerHTML = pipsHTML(a); d1.classList.remove('dice-rolling'); }
+      if(d2){ d2.innerHTML = pipsHTML(b); d2.classList.remove('dice-rolling'); }
+      settleDice(a, b, bet);
+    }catch(e){ console.error('骰子结算异常', e); }
+    g.dice.rolling = false; g.dice.timer = null;
+  }, 1400);
+}
+function rollSum(target){
+  var sum;
+  if(target === 'seven') sum = 7;
+  else if(target === 'small') sum = 2+Math.floor(Math.random()*5);
+  else sum = 8+Math.floor(Math.random()*5);
+  var a = 1+Math.floor(Math.random()*6);
+  var b = sum-a;
+  if(b<1||b>6){ a = Math.max(1, Math.min(6, sum-1)); b = sum-a; }
+  return [a,b];
+}
+function rollDiceResult(){
+  var side = g.dice.side;
+  if(side === 'pair'){
+    if(Math.random() < 1/6){ var p=1+Math.floor(Math.random()*6); return [p,p]; }
+    var x=1+Math.floor(Math.random()*6), y=1+Math.floor(Math.random()*5);
+    if(y===x) y = y===1?2:y-1;
+    return [x,y];
+  }
+  var r = Math.random()*100, wr = state.config.dice;
+  var outcome = r < 10 ? 'draw' : (r < 10+wr ? 'win' : 'lose');
+  if(outcome === 'draw') return rollSum('seven');
+  if(side === 'small') return outcome==='win' ? rollSum('small') : rollSum('big');
+  return outcome==='win' ? rollSum('big') : rollSum('small');
+}
+function settleDice(a, b, bet){
+  var sum = a+b, pair = a===b, side = g.dice.side, net, type, detail;
+  if(side === 'pair'){
+    if(pair){ net = bet*6; type='win'; detail='豹子 '+a+'+'+b+'，赢 +'+bet*5; }
+    else { net = 0; type='lose'; detail='未中豹子，输 -'+bet; }
+  } else if(sum === 7){
+    net = bet; type='draw'; detail='和局 7 点，退注';
+  } else if(side === 'small'){
+    if(sum <= 6){ net = bet*2; type='win'; detail='开小 '+sum+'，赢 +'+bet; }
+    else { net = 0; type='lose'; detail='开大 '+sum+'，输 -'+bet; }
+  } else {
+    if(sum >= 8){ net = bet*2; type='win'; detail='开大 '+sum+'，赢 +'+bet; }
+    else { net = 0; type='lose'; detail='开小 '+sum+'，输 -'+bet; }
+  }
+  settle('dice', type, net, detail);
+  updateHead('dice');
+}
+
+/* ============ 扑克牌 ============ */
+function randCard(){
+  var ri = Math.floor(Math.random()*CARD_RANKS.length);
+  return {rank: CARD_RANKS[ri], suit: CARD_SUITS[Math.floor(Math.random()*4)], value: ri+2};
+}
+function makeCard(value){
+  var suit = CARD_SUITS[Math.floor(Math.random()*4)];
+  return {rank: CARD_RANKS[value-2], suit:suit, value:value};
+}
+function dealCards(){
+  var r = Math.random()*100, wr = state.config.card;
+  var res = r < 10 ? 'draw' : (r < 10+wr ? 'win' : 'lose');
+  if(res === 'draw'){
+    var v = 2+Math.floor(Math.random()*13);
+    var my = makeCard(v), ai = makeCard(v);
+    ai.suit = CARD_SUITS[(CARD_SUITS.indexOf(ai.suit)+1)%4];
+    return {my:my, ai:ai};
+  }
+  if(res === 'win'){
+    return {my:makeCard(10+Math.floor(Math.random()*5)), ai:makeCard(2+Math.floor(Math.random()*8))};
+  }
+  return {my:makeCard(2+Math.floor(Math.random()*8)), ai:makeCard(10+Math.floor(Math.random()*5))};
+}
+function renderCard(){
+  var el = document.getElementById('view-card');
+  var kSkin = state.equipped.card ? skinById(state.equipped.card) : null;
+  var cardBg = kSkin ? kSkin.bg : '';
+  el.innerHTML = gameHead('card') +
+    '<div class="panel">'+
+      '<div class="section-title">比大小 · 你 vs 对手</div>'+
+      '<div class="card-stage">'+
+        '<div class="pcard" id="myCard"><div class="pc-suit">?</div><div class="pc-rank">?</div></div>'+
+        '<div class="vs">VS</div>'+
+        '<div class="pcard back" id="aiCard" style="'+(cardBg?'background:'+cardBg:'')+'"></div>'+
+      '</div>'+
+      betChipHTML('card')+
+      betBtnHTML('cardGo','抽牌对决',g.card.bet)+
+    '</div>'+
+    '<div class="note">点数 2~10 按面值，J=11、Q=12、K=13、A 最大；平局退注，获胜 1:1。</div>';
+  bindBetChips(el, 'card');
+  document.getElementById('cardGo').onclick = playCard;
+}
+function updateHead(key){
+  var head = document.querySelector('#view-'+key+' .last-result');
+  if(head) head.innerHTML = lastHTML(key);
+}
+function playCard(){
+  if(g.card.dealing) return;
+  var bet = g.card.bet;
+  if(state.chips < bet){ toast('金币不足，可到充值界面兑换金币'); return; }
+  g.card.dealing = true;
+  state.chips = fmt(state.chips - bet); save(); renderCurrencies();
+  var cards = dealCards(), my = cards.my, ai = cards.ai;
+  var myEl = document.getElementById('myCard'), aiEl = document.getElementById('aiCard');
+  if(myEl) myEl.innerHTML = '<div class="pc-suit">'+my.suit+'</div><div class="pc-rank">'+my.rank+'</div>';
+  if(aiEl){ aiEl.classList.add('back'); aiEl.style.background = ''; aiEl.innerHTML = ''; }
+  g.card.timer = setTimeout(function(){
+    try{
+      if(aiEl){
+        aiEl.classList.remove('back');
+        aiEl.style.background = '#fff';
+        aiEl.innerHTML = '<div class="pc-suit">'+ai.suit+'</div><div class="pc-rank">'+ai.rank+'</div>';
+      }
+      var net, type, detail;
+      if(my.value > ai.value){ net = bet*2; type='win'; detail='你 '+my.rank+' 胜 '+ai.rank+'，赢 +'+bet; }
+      else if(my.value < ai.value){ net = 0; type='lose'; detail='你 '+my.rank+' 负 '+ai.rank+'，输 -'+bet; }
+      else { net = bet; type='draw'; detail='平局 '+my.rank+'，退注'; }
+      settle('card', type, net, detail);
+      updateHead('card');
+    }catch(e){ console.error('扑克结算异常', e); }
+    g.card.dealing = false; g.card.timer = null;
+  }, 900);
+}
+
+/* ============ 射箭 ============ */
+function renderArchery(){
+  var el = document.getElementById('view-archery');
+  var bSkin = state.equipped.bow ? skinById(state.equipped.bow) : null;
+  var dotBg = bSkin ? bSkin.bg : 'var(--gold)';
+  el.innerHTML = gameHead('archery') +
+    '<div class="panel">'+
+      '<div class="section-title">蓄力射箭 · 命中靶心</div>'+
+      '<div class="bow-stage">'+
+        '<div class="target" id="target">'+
+          '<div class="ring" style="width:160px;height:160px"></div>'+
+          '<div class="ring" style="width:120px;height:120px"></div>'+
+          '<div class="ring" style="width:80px;height:80px"></div>'+
+          '<div class="ring" style="width:40px;height:40px"></div>'+
+          '<div class="arrow-dot" id="arrowDot" style="left:50%;top:50%;background:'+dotBg+'"></div>'+
+        '</div>'+
+        '<div class="power-bar"><div class="power-fill" id="powerFill"></div></div>'+
+      '</div>'+
+      betChipHTML('archery')+
+      (state.chips < g.archery.bet ? '<button class="btn gold row" id="bowGo" disabled>金币不足</button>'
+                                   : '<button class="btn gold row" id="bowGo">开始蓄力</button>')+
+    '</div>'+
+    '<div class="note">指针停在靶心附近环数更高：10 环 ×3，8~9 环 ×1.5，6~7 环回本，1~5 环未中。</div>';
+  bindBetChips(el, 'archery');
+  document.getElementById('bowGo').onclick = toggleCharge;
+}
+function toggleCharge(){
+  var a = g.archery;
+  if(!a.charging){
+    if(state.chips < a.bet){ toast('金币不足，可到充值界面兑换金币'); return; }
+    state.chips = fmt(state.chips - a.bet); save(); renderCurrencies();
+    a.charging = true; a.stopped = false; a.pos = 50; a.dir = 1;
+    document.getElementById('bowGo').textContent = '停止射箭';
+    a.raf = requestAnimationFrame(tickPower);
+  } else {
+    stopShot();
+  }
+}
+function tickPower(){
+  var a = g.archery;
+  a.pos += a.dir * 1.6;
+  if(a.pos >= 100){ a.pos = 100; a.dir = -1; }
+  if(a.pos <= 0){ a.pos = 0; a.dir = 1; }
+  var fill = document.getElementById('powerFill');
+  if(fill) fill.style.width = a.pos + '%';
+  var dot = document.getElementById('arrowDot');
+  if(dot){ dot.style.left = a.pos + '%'; dot.style.top = (50 + Math.sin(a.pos/10)*18) + '%'; }
+  if(a.charging) a.raf = requestAnimationFrame(tickPower);
+}
+function stopShot(){
+  var a = g.archery;
+  if(a.raf){ cancelAnimationFrame(a.raf); a.raf=null; }
+  a.charging = false;
+  try{
+  // 按后台配置的命中概率决定环数档位
+  var r = Math.random()*100, wr = state.config.archery, ring;
+  if(r < wr){
+    var t = Math.random();
+    if(t < 0.2) ring = 10;
+    else if(t < 0.6) ring = 8+Math.floor(Math.random()*2);
+    else ring = 6+Math.floor(Math.random()*2);
+  } else {
+    ring = 1+Math.floor(Math.random()*5);
+  }
+  var dist = (10-ring)*5 + Math.floor(Math.random()*4);
+  a.pos = Math.max(2, Math.min(98, 50 + (Math.random()<0.5?-1:1)*dist));
+  var dot = document.getElementById('arrowDot');
+  if(dot){ dot.style.left = a.pos+'%'; dot.style.top = (50 + Math.sin(a.pos/10)*18)+'%'; }
+  var bet = a.bet, net, type, detail;
+  if(ring === 10){ net = bet*3; type='win'; detail='正中 10 环，赢 +'+bet*2; }
+  else if(ring >= 8){ net = Math.round(bet*1.5); type='win'; detail=ring+' 环，赢 +'+Math.round(bet*0.5); }
+  else if(ring >= 6){ net = bet; type='draw'; detail=ring+' 环，回本退注'; }
+  else { net = 0; type='lose'; detail=ring+' 环脱靶，输 -'+bet; }
+  settle('archery', type, net, detail);
+  updateHead('archery');
+  }catch(e){ console.error('射箭结算异常', e); }
+  var btn = document.getElementById('bowGo');
+  if(btn) btn.textContent = '开始蓄力';
+  var fill = document.getElementById('powerFill');
+  if(fill) fill.style.width = '0%';
+}
+
+/* ============ 俄罗斯轮盘 ============ */
+var ROUL_CHAMBERS = 6;
+function renderRoulette(){
+  var el = document.getElementById('view-roulette');
+  var r = g.roulette;
+  var chambers = '';
+  for(var i=0;i<ROUL_CHAMBERS;i++){
+    var ang = i*60*Math.PI/180;
+    var x = Math.cos(ang)*15, y = Math.sin(ang)*15;
+    chambers += '<div class="chamber" style="transform:translate(calc(-50% + '+x.toFixed(1)+'px),calc(-50% + '+y.toFixed(1)+'px))"></div>';
+  }
+  var pActive = !r.over && r.current==='player';
+  var aActive = !r.over && r.current==='ai';
+  var pDead = r.result==='player', aDead = r.result==='ai';
+  var faceP = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#e8eaee" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>';
+  var faceA = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#e8eaee" stroke-width="2"><rect x="7" y="8" width="10" height="8" rx="2"/><line x1="12" y1="4" x2="12" y2="8"/><circle cx="12" cy="2" r="1"/><circle cx="10" cy="12" r="1" fill="#e8eaee"/><circle cx="14" cy="12" r="1" fill="#e8eaee"/></svg>';
+  var logText = r.log || (r.over ? '本局已结束' : '选择子弹数与下注，开始对决');
+  var btnLabel = r.over ? '再来一局' : (!r.started ? '开始对决' : (r.current==='ai' ? '人机回合…' : '轮到你开枪'));
+  var poorR = (state.chips < r.bet) && (!r.started || r.over);
+  el.innerHTML = gameHead('roulette') +
+    '<div class="panel">'+
+      '<div class="section-title">俄罗斯轮盘 · 你 vs 人机</div>'+
+      '<div class="duel">'+
+        '<div class="avatar'+(pActive?' active':'')+(pDead?' hit dead':'')+'" id="avPlayer"><div class="av-face">'+faceP+'</div><div class="av-name">你</div></div>'+
+        '<div class="gun-wrap" id="gunWrap"><div class="gun" id="gun">'+
+          '<div class="frame"></div><div class="barrel"></div><div class="grip"></div>'+
+          '<div class="cylinder" id="cylinder">'+chambers+'</div>'+
+          '<div class="flash" id="flash"></div>'+
+        '</div></div>'+
+        '<div class="avatar'+(aActive?' active':'')+(aDead?' hit dead':'')+'" id="avAi"><div class="av-face">'+faceA+'</div><div class="av-name">人机</div></div>'+
+      '</div>'+
+      '<div class="rou-log" id="rouLog">'+logText+'</div>'+
+      '<div class="bullet-row">'+[1,2,3,4].map(function(n){
+        return '<div class="bet'+(r.bullets===n?' sel':'')+'" data-bul="'+n+'"><div class="b-name">'+n+' 发</div><div class="b-odds">子弹</div></div>';
+      }).join('')+'</div>'+
+      betChipHTML('roulette')+
+      '<button class="btn gold row" id="rouGo"'+(poorR?' disabled':'')+'>'+(poorR?'金币不足':btnLabel)+'</button>'+
+    '</div>'+
+    '<div class="red-flash" id="redFlash"></div>'+
+    '<div class="note">子弹开局固定装入弹巢，轮流扣扳机直到击发，必有一方中弹；你先开枪，之后人机交替。获胜 1:1：返还本金并额外赢取等额下注，中弹则输掉本局下注。</div>';
+  el.querySelectorAll('[data-bul]').forEach(function(node){
+    node.onclick = function(){ if(r.started && !r.over) return; r.bullets = Number(node.dataset.bul); renderCurrent(currentView); };
+  });
+  bindBetChips(el, 'roulette');
+  document.getElementById('rouGo').onclick = rouGo;
+}
+function rouLog(t){ var l=document.getElementById('rouLog'); if(l) l.textContent=t; g.roulette.log=t; }
+function rouAnimate(){
+  var gun=document.getElementById('gun'), cyl=document.getElementById('cylinder'), flash=document.getElementById('flash');
+  [gun,cyl,flash].forEach(function(n){ if(n){ n.classList.remove('recoil','spin','on'); void n.offsetWidth; } });
+  if(gun) gun.classList.add('recoil');
+  if(cyl) cyl.classList.add('spin');
+  if(flash) flash.classList.add('on');
+  var wrap=document.getElementById('gunWrap');
+  if(wrap){ wrap.classList.remove('stage-shake'); void wrap.offsetWidth; wrap.classList.add('stage-shake'); }
+}
+function rouRedFlash(){ var f=document.getElementById('redFlash'); if(f){ f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); } }
+function rouLoad(){
+  var r=g.roulette;
+  var slots=new Array(ROUL_CHAMBERS).fill(false);
+  var k=(state.config.roulette-50)/50; // -1 ~ 1，中性 0
+  // 顺序位 0=玩家第1枪、1=人机第1枪、2=玩家第2枪……偶数玩家位，奇数人机位
+  var pool=[];
+  for(var pos=0;pos<ROUL_CHAMBERS;pos++){
+    var isPlayer=(pos%2===0);
+    var w=isPlayer?Math.max(0.15,1-0.8*k):Math.max(0.15,1+0.8*k);
+    pool.push({pos:pos,w:w});
+  }
+  for(var n=0;n<r.bullets;n++){
+    var total=pool.reduce(function(s,p){return s+p.w;},0);
+    var roll=Math.random()*total, acc=0, pick=pool[0];
+    for(var i=0;i<pool.length;i++){ acc+=pool[i].w; if(roll<=acc){ pick=pool[i]; break; } }
+    slots[pick.pos]=true; pool.splice(pool.indexOf(pick),1);
+  }
+  r.chamber=slots; r.idx=0;
+}
+function rouFire(){ var r=g.roulette; var hit=r.chamber[r.idx]; r.idx=(r.idx+1)%ROUL_CHAMBERS; return hit; }
+function rouStart(){
+  var r=g.roulette;
+  if(state.chips<r.bet){ toast('金币不足，可到充值界面兑换金币'); return; }
+  state.chips=fmt(state.chips-r.bet); save(); renderCurrencies();
+  rouLoad();
+  r.started=true; r.over=false; r.busy=false; r.current='player'; r.result=null; r.shots=0; r.log='对决开始，已装入 '+r.bullets+' 发子弹，你先开枪';
+  renderRoulette();
+}
+function rouGo(){
+  var r=g.roulette;
+  if(r.busy) return;
+  if(!r.started || r.over){ rouStart(); return; }
+  if(r.current==='player') rouPlayerFire();
+}
+function rouPlayerFire(){
+  var r=g.roulette; r.busy=true;
+  rouAnimate();
+  r.timer = setTimeout(function(){
+    if(rouFire()){ rouEnd('lose','你中弹，输 -'+r.bet); }
+    else {
+      r.shots++; r.current='ai'; r.busy=false;
+      if(currentView==='roulette'){ rouLog('第 '+(r.shots*2-1)+' 枪空膛，轮到人机'); renderRoulette(); }
+      r.timer = setTimeout(rouAiFire, 1000);
+    }
+  },500);
+}
+function rouAiFire(){
+  var r=g.roulette; if(r.over) return;
+  r.busy=true;
+  if(currentView==='roulette'){ renderRoulette(); rouAnimate(); }
+  r.timer = setTimeout(function(){
+    if(rouFire()){ rouEnd('win','人机中弹，赢回本金并 +'+r.bet+' 金币'); }
+    else {
+      r.shots++; r.current='player'; r.busy=false;
+      if(currentView==='roulette'){ rouLog('第 '+(r.shots*2)+' 枪空膛，轮到你'); renderRoulette(); }
+    }
+  },500);
+}
+function rouEnd(type, detail){
+  var r=g.roulette; r.over=true; r.busy=false; r.result=(type==='win'?'ai':'player');
+  var net = type==='win' ? r.bet*2 : 0;
+  settle('roulette', type, net, detail);
+  if(currentView==='roulette'){
+    updateHead('roulette');
+    if(type==='lose') rouRedFlash();
+    renderRoulette();
+  }
+}
+
+/* ============ 化龙 ============ */
+function dragonForm(p){
+  if(p>=100) return {name:'龙', cls:'dragon'};
+  if(p>=67) return {name:'蛟', cls:'jiao'};
+  if(p>=34) return {name:'蟒', cls:'mang'};
+  return {name:'蛇', cls:'snake'};
+}
+var DRAGON_STAGES=[
+  {name:'蛇', cls:'snake', at:0},
+  {name:'蟒', cls:'mang',  at:34},
+  {name:'蛟', cls:'jiao',  at:67},
+  {name:'龙', cls:'dragon',at:100}
+];
+// 各阶段历练基础失败率：蛇 → 蟒 → 蛟，阶段越高越容易失败
+var DRAGON_FAIL_BASE=[0.10, 0.22, 0.34];
+// 各档位成功加分区间：100 金币 1~13，50 金币 5~8，10 金币 1~3
+function dragonGainRange(bet){
+  if(bet>=100) return [1,13];
+  if(bet>=50)  return [5,8];
+  return [1,3];
+}
+// 各阶段失败减分点数区间（多减分，阶段越高掉得越多）
+var DRAGON_DROP=[[1,3],[2,3],[2,3]];
+// 跨阶段渡劫成功率：蛇→蟒、蟒→蛟（蛟→龙由最终化龙判定）
+var DRAGON_PASS=[0.78, 0.65];
+function dragonStageOf(p){
+  if(p>=67) return 2;
+  if(p>=34) return 1;
+  return 0;
+}
+function formSVG(cls){
+  var paths={
+    snake:'<path d="M3 16c2.5-5 5.5 5 8 0s5.5-5 8-2"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/>',
+    mang:'<path d="M3 15c3-6 6 6 9 0s5-6 6-3"/><path d="M3.5 18c2-3 4.5 3 7 0" opacity=".55"/><circle cx="18.5" cy="11.5" r="1.8" fill="currentColor" stroke="none"/>',
+    jiao:'<path d="M3 15c3-6 6 6 9 0s5-6 6-3"/><path d="M17 9l1.5-2M19 10l2-1.5"/><circle cx="18" cy="12" r="1.8" fill="currentColor" stroke="none"/>',
+    dragon:'<path d="M4 18c3-1 4-4 7-4s4 3 7 2"/><path d="M13 10c1.5-1 3-3 3-5"/><path d="M16 5l2-1M16 5l1-2"/><circle cx="17" cy="7" r="1.5" fill="currentColor" stroke="none"/><path d="M6 14l-2-1M6 14l-2 1"/>'
+  };
+  return '<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(paths[cls]||paths.snake)+'</svg>';
+}
+function renderDragon(){
+  var el=document.getElementById('view-dragon');
+  var d=g.dragon;
+  var form=dragonForm(d.progress);
+  var poor=state.chips<d.bet;
+  var pct=Math.min(100,Math.floor(d.progress));
+  var canTransform=d.progress>=100;
+  var btnHTML;
+  if(d.over){ btnHTML='<button class="btn gold row" id="dragonReset">再来一局</button>'; }
+  else if(canTransform){ btnHTML='<button class="btn gold row" id="dragonGo">点击化龙</button>'; }
+  else { btnHTML=poor ? '<button class="btn gold row" disabled>金币不足</button>'
+                     : '<button class="btn gold row" id="dragonGo">下注历练</button>'; }
+  var nodes=DRAGON_STAGES.map(function(s){
+    var lit=d.progress>=s.at;
+    var cur=form.cls===s.cls;
+    return '<div class="stage-node'+(lit?' lit':'')+(cur?' current':'')+'">'+formSVG(s.cls)+'<span>'+s.name+'</span></div>';
+  }).join('');
+  var deltaTxt=d.lastDelta? (d.lastDelta>0? ' · 本次 +'+d.lastDelta : ' · 本次 -'+Math.abs(d.lastDelta)) : '';
+  el.innerHTML=gameHead('dragon')+
+    '<div class="panel">'+
+      '<div class="section-title">化龙 · 历练蜕变化龙</div>'+
+      '<div class="dragon-stage">'+
+        '<div class="dragon-form '+form.cls+'">'+formSVG(form.cls)+'</div>'+
+        '<div class="stage-nodes">'+nodes+'</div>'+
+        '<div class="progress-wrap"><div class="progress-fill" style="width:'+pct+'%"></div></div>'+
+        '<div class="dragon-meta">资质 '+pct+' / 100'+deltaTxt+'</div>'+
+        '<div class="dragon-meta">本局累计投入 '+d.invested+' 金币'+(d.lastMsg? ' · '+d.lastMsg:'')+'</div>'+
+      '</div>'+
+      betChipHTML('dragon')+
+      '<div class="field"><label>自定义下注（金币，留空则用上方档位）</label><input type="number" id="dragonCustom" min="1" step="1" placeholder="输入自定义下注金额"></div>'+
+      btnHTML+
+    '</div>';
+  bindBetChips(el,'dragon');
+  var go=document.getElementById('dragonGo'); if(go) go.onclick=dragonAction;
+  var rs=document.getElementById('dragonReset'); if(rs) rs.onclick=dragonReset;
+}
+function currentDragonBet(){
+  var inp=document.getElementById('dragonCustom');
+  var v=inp?Number(inp.value):NaN;
+  if(!isNaN(v)&&v>=1) return Math.floor(v);
+  return g.dragon.bet;
+}
+function dragonAction(){
+  var d=g.dragon;
+  if(d.over) return;
+  var bet=currentDragonBet();
+  if(!bet||bet<1){ toast('请输入有效下注金额'); return; }
+  if(state.chips<bet){ toast('金币不足，可到充值界面兑换金币'); return; }
+  d.bet=bet;
+  if(d.progress>=100){ dragonTransform(bet); return; }
+  // 扣注并累计本局投入（赔付基数）
+  state.chips=fmt(state.chips-bet); save(); renderCurrencies();
+  d.invested=fmt(d.invested+bet);
+  var wr=state.config.dragon||50, k=(wr-50)/50; // 后台倾向：越高越易精进
+  var stage=dragonStageOf(d.progress);
+  var fail=DRAGON_FAIL_BASE[stage]-k*0.15;
+  fail=Math.max(0.05,Math.min(0.7,fail));
+  if(Math.random()<fail){
+    // 历练失败：固定点数回落，阶段越高掉得越多，最低回到 0
+    var dr=DRAGON_DROP[stage];
+    var drop=Math.round(dr[0]+Math.random()*(dr[1]-dr[0]));
+    d.progress=Math.max(0,d.progress-drop);
+    d.lastDelta=-drop;
+    d.lastMsg='历练失败，资质回落';
+  } else {
+    // 历练有成：按下注档位取加分区间（加分少）
+    var gr=dragonGainRange(bet);
+    var gain=Math.round(gr[0]+Math.random()*(gr[1]-gr[0]));
+    gain=Math.max(1,gain);
+    var np=d.progress+gain;
+    // 跨阶段渡劫：蛇→蟒(34)、蟒→蛟(67)，可能成功也可能失败
+    var thresholds=[34,67], crossed=-1;
+    for(var t=0;t<thresholds.length;t++){
+      if(d.progress<thresholds[t] && np>=thresholds[t]){ crossed=t; break; }
+    }
+    if(crossed>=0){
+      var pass=DRAGON_PASS[crossed]+0.15*k;
+      pass=Math.max(0.2,Math.min(0.9,pass));
+      if(Math.random()<pass){
+        d.progress=Math.min(99,np);
+        d.lastDelta=gain;
+        d.lastMsg='渡劫成功，晋升'+DRAGON_STAGES[crossed+1].name;
+      } else {
+        var back=thresholds[crossed]-Math.round(3+Math.random()*5);
+        d.progress=Math.max(d.progress,back);
+        d.lastDelta=-(thresholds[crossed]-d.progress);
+        d.lastMsg='渡劫失败，未能晋升'+DRAGON_STAGES[crossed+1].name;
+      }
+    } else {
+      d.progress=Math.min(100,np);
+      d.lastDelta=gain;
+      d.lastMsg='历练有成，资质精进';
+    }
+  }
+  renderDragon();
+}
+function dragonTransform(bet){
+  var d=g.dragon;
+  var wr=state.config.dragon||50, k=(wr-50)/50;
+  var succ=Math.max(0.2,Math.min(0.8,0.45+k*0.2));
+  if(Math.random()<succ){
+    // 化龙成功：按本局累计投入翻倍返还
+    var net=fmt(d.invested*2);
+    settle('dragon','win',net,'化龙成功！累计投入 '+d.invested+'，返还 '+net+' 金币');
+    d.over=true; d.progress=100; d.lastMsg='化龙成功';
+    updateHead('dragon'); renderDragon();
+  } else {
+    // 化龙失败：本局结束，不再重修
+    settle('dragon','lose',0,'化龙失败，本局结束');
+    d.over=true;
+    d.progress=Math.max(60,d.progress-20);
+    d.lastDelta=-20; d.lastMsg='化龙失败，本局结束';
+    renderDragon();
+  }
+}
+function dragonReset(){
+  var d=g.dragon; d.progress=0; d.over=false; d.invested=0; d.lastDelta=0; d.lastMsg='';
+  renderDragon();
+}
+
+function checkDiamondExpire(){
+  if(state.diamonds>0 && state.diamondAt && Date.now()-state.diamondAt>DIAMOND_TTL){
+    state.diamonds=0; state.diamondAt=0; save(); renderCurrencies();
+    if(currentView==='recharge') renderRecharge();
+    toast('钻石已按规则半小时清零');
+  }
+}
+function diamondRemain(){
+  if(state.diamonds<=0 || !state.diamondAt) return 0;
+  return Math.max(0, DIAMOND_TTL-(Date.now()-state.diamondAt));
+}
+function renderCurrencies(){
+  document.getElementById('curChip').textContent = fmt(state.chips);
+  var dia=document.getElementById('curDia');
+  if(dia) dia.textContent = fmt(state.diamonds);
+}
+function renderAll(){ renderCurrencies(); renderCurrent(currentView); }
+
+/* ============ 登录 / 注册 ============ */
+var authMode = 'login';
+function setAuthMode(mode){
+  authMode = mode;
+  document.getElementById('authSubmit').textContent = mode === 'login' ? '登录' : '注册并进入';
+  document.querySelector('.auth-switch').innerHTML = mode === 'login'
+    ? '还没有账号？<a id="authToggle">注册新账号</a>'
+    : '已有账号？<a id="authToggle">返回登录</a>';
+  document.getElementById('authToggle').onclick = function(){ setAuthMode(mode === 'login' ? 'register' : 'login'); };
+}
+function submitAuth(){
+  var u = document.getElementById('authUser').value.trim();
+  var p = document.getElementById('authPass').value.trim();
+  if(!u || !p){ toast('请输入账号和密码'); return; }
+  if(authMode === 'register'){
+    if(!/^[一-龥A-Za-z0-9_]{2,16}$/.test(u)){ toast('账号需为 2~16 位中文、字母、数字或下划线'); return; }
+    if(p.length < 6){ toast('密码至少 6 位'); return; }
+  }
+  // 切换账号前先把当前账号的个人数据写回存档
+  if(state.account.loggedIn && state.account.username && state.account.username !== u){
+    writeAccountData(state.account.username, state);
+  }
+  var res;
+  if(authMode === 'register'){
+    res = Backend.register(u, p);
+    if(!res.ok){ toast(res.reason); return; }
+    applyAccountData(defaultAccountData()); // 新账号默认 8 金币
+    toast('注册成功，赠送 '+NEWBIE_BONUS+' 金币（每个账号仅一次）');
+  } else {
+    res = Backend.login(u, p);
+    if(!res.ok){ toast(res.reason); return; }
+    applyAccountData(readAccountData(u)); // 载入该账号独立存档
+  }
+  state.account = {username:u, loggedIn:true, role:res.role};
+  save();
+  enterApp();
+}
+function enterApp(){
+  document.getElementById('view-login').classList.remove('active');
+  document.getElementById('appWrap').classList.remove('hidden');
+  document.getElementById('tabbar').classList.remove('hidden');
+  document.getElementById('adminRow').style.display = state.account.role === 'admin' ? 'block' : 'none';
+  renderCurrencies();
+  go('lobby');
+}
+function renderAccountList(){
+  var wrap=document.getElementById('accountListWrap');
+  var box=document.getElementById('accountList');
+  var names=Backend.listUsers();
+  var items=names.map(function(n){return {name:n,role:'玩家'};});
+  if(!items.length){ wrap.style.display='none'; box.innerHTML=''; return; }
+  wrap.style.display='block';
+  box.innerHTML=items.map(function(it){
+    return '<div class="acc-item" data-user="'+it.name+'"><span class="a-name">'+it.name+'</span><span class="a-role">'+it.role+'</span></div>';
+  }).join('');
+  box.querySelectorAll('.acc-item').forEach(function(n){
+    n.onclick=function(){
+      document.getElementById('authUser').value=n.dataset.user;
+      document.getElementById('authPass').focus();
+    };
+  });
+}
+function logout(){
+  // 退出前把当前账号个人数据写回存档
+  if(state.account.loggedIn && state.account.username){
+    writeAccountData(state.account.username, state);
+  }
+  state.account={username:'',loggedIn:false,role:'player'};
+  save();
+  document.getElementById('appWrap').classList.add('hidden');
+  document.getElementById('tabbar').classList.add('hidden');
+  document.getElementById('view-login').classList.add('active');
+  currentView='login';
+  setAuthMode('login');
+  document.getElementById('authUser').value='';
+  document.getElementById('authPass').value='';
+  renderAccountList();
+  toast('已退出登录，可选择其他账号');
+}
+
+/* ============ 事件绑定 ============ */
+document.getElementById('authToggle').onclick = function(){ setAuthMode(authMode === 'login' ? 'register' : 'login'); };
+document.getElementById('authSubmit').onclick = submitAuth;
+['authUser','authPass'].forEach(function(id){
+  document.getElementById(id).addEventListener('keydown', function(e){ if(e.key === 'Enter') submitAuth(); });
+});
+document.getElementById('chipWallet').onclick = function(){ go('recharge'); };
+document.getElementById('diaWallet').onclick = function(){ go('recharge'); };
+document.getElementById('rechargeEntry').onclick = function(){ go('recharge'); };
+document.getElementById('topRecharge').onclick = function(){ go('recharge'); };
+// 钻石半小时清零定时检查
+setInterval(checkDiamondExpire, 15000);
+
+document.querySelectorAll('.entry').forEach(function(e){
+  e.onclick = function(){
+    var gameKey = e.dataset.game;
+    if(gameKey === 'shop') go('shop'); else go(gameKey);
+  };
+});
+document.querySelectorAll('.quick,.tab').forEach(function(t){
+  t.onclick = function(){ go(t.dataset.go); };
+});
+document.getElementById('resetBtn').onclick = function(){
+  if(confirm('清空当前账号的货币、库存与战绩，恢复初始状态？')){
+    var acc = state.account;
+    applyAccountData(defaultAccountData());
+    state.account = acc;
+    save(); renderAll(); toast('已重置当前账号数据');
+  }
+};
+document.getElementById('logoutBtn').onclick = logout;
+
+load();
+if(state.account.loggedIn){ enterApp(); } else { setAuthMode('login'); renderAccountList(); }
+</script>
+</body>
+</html>
